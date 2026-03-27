@@ -69,7 +69,7 @@ const Logos3 = ({
     <section className="py-6 w-full">
       <div className="container flex flex-col items-center text-center">
         {heading && (
-          <h1 className="my-6 text-2xl font-bold text-pretty lg:text-4xl text-gray-900">
+          <h1 className="my-6 text-2xl font-bold text-pretty lg:text-4xl text-white">
             {heading}
           </h1>
         )}
@@ -87,9 +87,9 @@ const Logos3 = ({
                   key={term.id}
                   className="flex basis-auto justify-center pl-8 sm:pl-12 lg:pl-16"
                 >
-                  <div className="flex shrink-0 items-center justify-center gap-3 py-2 px-6 rounded-2xl bg-gray-50/50 border border-gray-100 shadow-sm hover:shadow-md hover:bg-white transition-all">
+                  <div className="flex shrink-0 items-center justify-center gap-3 py-2 px-6 rounded-2xl bg-white/5 border border-white/10 shadow-sm hover:border-white/20 hover:bg-white/10 transition-all backdrop-blur-sm">
                     {term.icon}
-                    <span className="text-lg md:text-xl font-bold text-gray-800 tracking-tight whitespace-nowrap">
+                    <span className="text-lg md:text-xl font-bold text-white tracking-tight whitespace-nowrap">
                       {term.label}
                     </span>
                   </div>
@@ -97,8 +97,8 @@ const Logos3 = ({
               ))}
             </CarouselContent>
           </Carousel>
-          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white to-transparent pointer-events-none z-10"></div>
-          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"></div>
+          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#030303] to-transparent pointer-events-none z-10"></div>
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#030303] to-transparent pointer-events-none z-10"></div>
         </div>
       </div>
     </section>

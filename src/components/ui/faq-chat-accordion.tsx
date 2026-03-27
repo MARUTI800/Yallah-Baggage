@@ -56,8 +56,8 @@ export function FaqAccordion({
                   className={cn(
                     "relative flex-1 flex items-center rounded-2xl p-4 md:p-5 transition-all duration-300 text-left",
                     openItem === item.id.toString() 
-                      ? "bg-yellow-400/20 text-gray-900 shadow-md transform scale-[1.02]" 
-                      : "bg-gray-50 hover:bg-gray-100 text-gray-800 shadow-sm",
+                      ? "bg-orange-500/10 text-white shadow-md transform scale-[1.02] border border-orange-500/20" 
+                      : "bg-white/5 hover:bg-white/10 text-white/80 shadow-sm border border-transparent",
                     questionClassName
                   )}
                 >
@@ -83,8 +83,8 @@ export function FaqAccordion({
                   className={cn(
                     "shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm border",
                     openItem === item.id.toString() 
-                      ? "bg-yellow-400 text-gray-900 border-yellow-500 transform rotate-180"
-                      : "bg-white text-gray-400 group-hover:bg-gray-50 border-gray-200"
+                      ? "bg-orange-500 text-black border-orange-500 transform rotate-180"
+                      : "bg-white/5 text-white/40 group-hover:bg-white/10 border-white/10"
                   )}
                 >
                   {openItem === item.id.toString() ? (
@@ -109,7 +109,7 @@ export function FaqAccordion({
                 <div className="ml-4 md:ml-8 lg:ml-12 mb-4">
                   <div
                     className={cn(
-                      "relative max-w-2xl rounded-2xl rounded-tl-none bg-yellow-400 px-6 py-4 text-gray-900 font-medium shadow-md text-base md:text-lg",
+                      "relative max-w-2xl rounded-2xl rounded-tl-none bg-white/5 border border-white/10 px-6 py-4 text-white/70 font-medium shadow-md text-base md:text-lg",
                       answerClassName
                     )}
                   >

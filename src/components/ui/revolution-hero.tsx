@@ -3,23 +3,14 @@
 import React from "react"
 import { RideBookingForm } from "@/components/ui/ride-booking-form"
 import { Logos3 } from "@/components/ui/logos3"
-import { TypingAnimation } from "@/components/ui/typing-animation"
 import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel"
 import { FeatureSteps } from "@/components/ui/feature-section"
 import { FaqAccordion } from "@/components/ui/faq-chat-accordion"
 import { BlurIn } from "@/components/ui/blur-in"
 import { TestimonialsSection } from "@/components/blocks/testimonials"
 import { Home, Briefcase, PhoneCall, HelpCircle } from 'lucide-react'
-import { NavBar } from "@/components/ui/tubelight-navbar"
-import { TrustStats } from "@/components/ui/trust-stats"
 import Link from "next/link"
-
-const navItems = [
-  { name: 'Home', url: '#home', icon: Home },
-  { name: 'Services', url: '#services', icon: Briefcase },
-  { name: 'FAQ', url: '#faq', icon: HelpCircle },
-  { name: 'Contact', url: '#footer', icon: PhoneCall }
-]
+import { useRouter } from "next/navigation"
 
 const faqData = [
   {
@@ -47,154 +38,152 @@ const faqData = [
     question: "Can I cancel my booking?",
     answer: "Absolutely. We offer 100% free cancellation up to 2 hours before your scheduled pickup time.",
   },
-];
+]
 
-export const WebGLHero = () => {
+export const RevolutionHero = () => {
+  const router = useRouter();
+
   return (
-    <div className="w-full bg-white flex flex-col font-sans overflow-x-hidden">
+    <div className="w-full bg-[#030303] flex flex-col font-sans overflow-x-hidden selection:bg-gray-800 selection:text-white">
 
-      {/* Fixed Global Header */}
-      <header className="fixed top-0 inset-x-0 w-full z-[100] pt-4 px-4 sm:px-8 lg:px-16 pointer-events-none flex justify-between items-start transition-all duration-300">
-        
-        {/* Left Side: Brand Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto cursor-pointer bg-black/60 border border-white/10 backdrop-blur-xl px-4 py-2 sm:py-2.5 rounded-full shadow-2xl transition-transform hover:scale-105">
-          <img src="/Logo.png" alt="Yallah Baggage Logo" className="h-6 sm:h-8 md:h-9 lg:h-10 w-auto object-contain" />
-          <span className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tighter drop-shadow-md">
-            <span className="text-white">Yallah</span><span className="text-orange-500">Baggage</span>
+      {/* Header — Apple iOS Liquid Pill */}
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-[100] h-16 sm:h-20 flex items-center justify-between px-6 sm:px-10 bg-[#161616]/40 backdrop-blur-3xl backdrop-saturate-[1.8] border border-white/10 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] transition-all duration-300">
+        <div className="flex items-center gap-3 cursor-pointer group">
+          <img src="/Logo.png" alt="Yallah Baggage Logo" className="h-8 sm:h-9 md:h-10 w-auto object-contain transition-transform group-hover:scale-105 duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] brightness-110" />
+          <span className="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tighter text-white">
+            Yallah <span className="text-white/40 font-light">Baggage</span>
           </span>
         </div>
 
-        {/* Right Side: Tubelight Navbar (Desktop) and Book Now Button */}
-        <div className="pointer-events-auto hidden sm:flex items-center gap-4">
-          <NavBar items={navItems} />
-          <Link href="/book-now" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-2 rounded-full shadow-lg transition-transform hover:scale-105">
+        <div className="hidden sm:flex items-center gap-8 lg:gap-10">
+          <nav className="text-white/70 hidden lg:flex gap-2 text-[0.95rem] font-medium tracking-tight">
+            <a href="#home" className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all duration-300 active:scale-95">Home</a>
+            <a href="#services" className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all duration-300 active:scale-95">Services</a>
+            <a href="#faq" className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all duration-300 active:scale-95">FAQ</a>
+          </nav>
+          <Link 
+            href="/book-now" 
+            className="bg-white text-black font-semibold px-6 lg:px-8 py-2.5 rounded-full hover:bg-zinc-200 active:scale-95 transition-all duration-300 tracking-tight text-sm shadow-[0_8px_24px_rgba(255,255,255,0.15)]"
+          >
             Book Now
           </Link>
         </div>
       </header>
 
-      {/* Mobile Bottom Navbar */}
-      <div className="fixed bottom-4 inset-x-0 z-[100] flex justify-center pointer-events-auto sm:hidden w-full px-4">
-        <NavBar items={navItems} className="w-full flex justify-center" />
-      </div>
+      {/* Hero Section */}
+      <section id="home" className="relative scroll-mt-28 w-full min-h-screen overflow-hidden bg-[#030303] flex items-center flex-col md:flex-row justify-center pb-24 lg:pb-24">
 
-      {/* Main Hero Container */}
-      <section id="home" className="relative scroll-mt-28 w-full min-h-[100vh] md:h-[100vh] overflow-hidden bg-black flex items-center flex-col md:flex-row justify-center pb-20 md:pb-0">
-        {/* Background Image */}
-        <img
-          src="/hero-bg.jpg"
-          alt="Hero Background"
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-        />
-
-        {/* Subtle Dark Gradient Overlay based on mockup (darker on left) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/10 pointer-events-none z-10" />
-
-        {/* Top Centered Animated Headline */}
-        <div className="absolute top-20 md:top-16 inset-x-0 z-30 flex flex-col items-center justify-center text-center pointer-events-none px-4">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white drop-shadow-2xl tracking-tight leading-[1.1]">
-            YALLAH.
-          </h1>
-          <TypingAnimation
-            text="WE'LL HANDLE IT."
-            duration={120}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-orange-500 drop-shadow-2xl mt-1 tracking-tight leading-[1.1] text-center"
+        <div className="absolute inset-0 z-0 opacity-40">
+          <img
+            src="/hero-bg.jpg"
+            alt="Hero Background"
+            className="w-full h-full object-cover object-center pointer-events-none grayscale-[60%] blur-[2px] scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-[#030303]/80 to-[#030303]/40" />
         </div>
 
-        {/* Content Layout */}
-        <div className="relative z-20 w-full h-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-16 flex flex-col md:flex-row items-center justify-between pt-48 md:pt-32">
+        <div className="relative z-30 w-full h-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between pt-[12rem] lg:pt-[11rem]">
 
-          {/* Left Text Block */}
-          <div className="text-white w-full lg:w-[45%] max-w-2xl flex-shrink-0 animate-in fade-in slide-in-from-left-8 duration-1000 mb-8 md:mb-0 mt-8 md:mt-0 text-center md:text-left flex flex-col items-center md:items-start">
-            <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 text-orange-400 drop-shadow-md text-balance">
-              Dubai's Premier Luggage Concierge
-            </h3>
-            <h4 className="text-base md:text-lg lg:text-xl font-bold mb-4 text-white drop-shadow-md text-balance">
-              Seamless transport to and from the airport — Stress-free!
-            </h4>
-
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-4 leading-[1.1] drop-shadow-2xl text-balance">
-              Luggage Storage,<br className="hidden sm:block" /> Pickup & Delivery
+          {/* Left Text */}
+          <div className="text-white w-full lg:w-[42%] flex-shrink-0 animate-in fade-in slide-in-from-bottom-8 duration-1000 md:mb-0 mt-8 md:mt-0 text-center lg:text-left flex flex-col items-center lg:items-start space-y-8 z-20">
+            <h1 className="text-6xl md:text-7xl lg:text-[6.5rem] font-medium leading-[0.95] tracking-tighter text-balance text-white selection:bg-white selection:text-black">
+              Luggage. <br />
+              <span className="text-white/40">Reimagined.</span>
             </h1>
 
-            <p className="text-lg md:text-xl font-bold text-gray-100 drop-shadow-md mt-2 md:mt-6 text-balance">
-              Your bags handled safely, starting from just AED 29/day
+            <p className="text-lg md:text-xl text-white/50 max-w-md text-balance leading-relaxed font-light tracking-wide">
+              The premier hands-free concierge for Dubai. We transport your bags from the airport to wherever you need them. Uncompromisingly simple.
             </p>
+
+            <div className="pt-4 flex items-center gap-4 opacity-80 mix-blend-screen">
+              <div className="flex -space-x-3">
+                {[1, 2, 3].map((i) => (
+                  <img key={i} src={`https://i.pravatar.cc/100?img=${i + 40}`} className="w-10 h-10 rounded-full border border-[#030303] object-cover" alt="Client" />
+                ))}
+              </div>
+              <div className="text-xs font-medium text-white/40 tracking-widest uppercase">
+                <span className="text-white font-bold block mb-0.5">45,000+ Bags Handled</span>
+                Safely &amp; Securely
+              </div>
+            </div>
           </div>
 
-          {/* Right Form Component */}
-          <div id="contact" className="scroll-mt-28 w-full lg:w-[55%] xl:max-w-4xl mt-4 md:mt-0 animate-in fade-in slide-in-from-right-8 duration-1000 md:ml-8 pb-10 md:pb-0">
+          {/* Right: Booking Form */}
+          <div id="contact" className="w-full lg:w-[58%] xl:max-w-4xl mt-16 lg:mt-0 animate-in fade-in slide-in-from-bottom-12 duration-1200 z-50 relative pb-10 md:pb-0 perspective-1000 pl-0 lg:pl-10">
             <RideBookingForm
               imageUrl="/yalla-form-image.png"
               city="Dubai, UAE"
-              onSearch={(d: any) => console.log(d)}
+              onSearch={(d) => {
+                const params = new URLSearchParams()
+                if (d.pickup) params.set("pickup", d.pickup)
+                if (d.dropoff) params.set("dropoff", d.dropoff)
+                if (d.date) params.set("date", d.date)
+                if (d.time) params.set("time", d.time)
+                router.push(`/book-now?${params.toString()}`)
+              }}
             />
           </div>
 
         </div>
       </section>
 
-      {/* Brand Logos Carousel Strip at the bottom */}
-      <div className="w-full bg-white relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.15)] -mt-2">
+      {/* Logo Carousel */}
+      <div className="w-full bg-[#030303] relative z-30 shadow-[0_-20px_50px_rgba(0,0,0,1)] border-t border-white/5 py-8">
         <Logos3 />
       </div>
 
-      {/* How it Works Section */}
-      <div id="services" className="scroll-mt-28">
-        <FeatureSteps
-          title="How Yallah Baggage Works"
-          autoPlayInterval={4000}
-          features={[
-            {
-              step: 'Step 1',
-              title: 'Book Your Transfer',
-              content: 'Schedule your luggage pickup online in seconds. Select your preferred pickup and drop-off locations.',
-              image: '/whatsapp_support.png'
-            },
-            {
-              step: 'Step 2',
-              title: 'We Pick It Up',
-              content: 'Our concierge driver securely collects your bags right from your doorstep or hotel lobby.',
-              image: '/yalla-form-image.png'
-            },
-            {
-              step: 'Step 3',
-              title: 'Explore Hands-Free',
-              content: 'Enjoy your day completely baggage-free! We will securely deliver your luggage to the airport or your next destination.',
-              image: 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&q=80&w=800'
-            },
-          ]}
-        />
-      </div>
+      {/* Below-fold dark sections */}
+      <div className="bg-[#000000] text-white relative z-40 overflow-hidden border-t border-white/5">
 
-      {/* FAQ Section */}
-      <div id="faq" className="scroll-mt-28 w-full bg-white py-16 md:py-24 border-t border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 lg:px-12">
-          <BlurIn
-            word="Frequently Asked Questions"
-            className="text-3xl md:text-3xl lg:text-5xl font-black mb-6 text-center text-gray-900 tracking-tight leading-tight"
-          />
-          <FaqAccordion
-            data={faqData}
-            timestamp=""
-            questionClassName="bg-white hover:bg-gray-50 text-gray-900 shadow-sm border border-gray-100 mb-3"
-            answerClassName="bg-[#FFD100] text-gray-900 font-bold"
+        {/* Services */}
+        <div id="services" className="scroll-mt-28 mt-16 px-6 max-w-7xl mx-auto">
+          <FeatureSteps
+            title="Effortless Logistics."
+            autoPlayInterval={4000}
+            features={[
+              {
+                step: 'Upload',
+                title: 'Book Your Transfer',
+                content: 'Schedule your luggage pickup online in seconds. Select your preferred pickup and drop-off locations with total precision.',
+                image: '/whatsapp_support.png'
+              },
+              {
+                step: 'Hand-off',
+                title: 'We Collect',
+                content: 'Our concierge meticulously retrieves your belongings directly from your location.',
+                image: '/yalla-form-image.png'
+              },
+              {
+                step: 'Enjoy',
+                title: 'Total Freedom',
+                content: 'Enjoy your day completely unburdened. Your items will meet you securely at your destination.',
+                image: 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&q=80&w=800'
+              },
+            ]}
           />
         </div>
+
+        {/* FAQ */}
+        <div id="faq" className="scroll-mt-28 w-full py-24 mb-10">
+          <div className="max-w-3xl mx-auto px-6 lg:px-12">
+            <BlurIn
+              word="Questions?"
+              className="text-4xl md:text-5xl lg:text-6xl font-medium mb-10 text-center text-white tracking-tighter leading-tight"
+            />
+            <FaqAccordion
+              data={faqData}
+              timestamp=""
+              questionClassName="bg-white/5 hover:bg-white/10 text-white border-b border-white/5 shadow-none py-6 text-lg font-medium"
+              answerClassName="bg-transparent text-white/60 font-normal py-4 leading-relaxed"
+            />
+          </div>
+        </div>
+
+        <HotelLogoCarousel />
+        <TestimonialsSection />
       </div>
-
-      {/* Trust Statistics Section */}
-      <TrustStats />
-
-      {/* 5-Star Hotels Logo Carousel */}
-      <HotelLogoCarousel />
-
-      {/* Testimonials Section */}
-      <TestimonialsSection />
-
     </div>
   )
 }
 
-export default WebGLHero
+export default RevolutionHero

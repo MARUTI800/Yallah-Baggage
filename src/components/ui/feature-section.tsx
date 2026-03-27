@@ -44,11 +44,11 @@ export function FeatureSteps({
   }, [progress, features.length, autoPlayInterval])
 
   return (
-    <div className={cn("py-16 md:py-24 bg-gray-50", className)}>
+    <div className={cn("py-16 md:py-24 bg-[#000000]", className)}>
       <div className="max-w-7xl mx-auto w-full px-8 md:px-12">
         <BlurIn 
           word={title as string} 
-          className="text-3xl md:text-4xl lg:text-5xl font-black mb-12 text-center text-gray-900 tracking-tight" 
+          className="text-3xl md:text-4xl lg:text-5xl font-black mb-12 text-center text-white tracking-tight" 
         />
 
         <div className="flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-16 items-center">
@@ -69,8 +69,8 @@ export function FeatureSteps({
                   className={cn(
                     "w-10 h-10 md:w-12 md:h-12 rounded-full flex shrink-0 items-center justify-center border-2 shadow-sm transition-all duration-300",
                     index === currentFeature
-                      ? "bg-yellow-400 border-yellow-400 text-black scale-110"
-                      : "bg-white border-gray-300 text-gray-400",
+                      ? "bg-orange-500 border-orange-500 text-black scale-110"
+                      : "bg-white/5 border-white/10 text-white/40",
                   )}
                 >
                   {index < currentFeature ? (
@@ -81,10 +81,10 @@ export function FeatureSteps({
                 </motion.div>
 
                 <div className="flex-1 mt-1">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
                     {feature.title || feature.step}
                   </h3>
-                  <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-md">
+                  <p className="text-base md:text-lg text-white/50 leading-relaxed max-w-md">
                     {feature.content}
                   </p>
                 </div>
@@ -94,7 +94,7 @@ export function FeatureSteps({
 
           <div
             className={cn(
-              "w-full order-1 md:order-2 relative h-[250px] sm:h-[350px] md:h-[450px] lg:h-[550px] overflow-hidden rounded-2xl shadow-2xl border border-gray-100"
+              "w-full order-1 md:order-2 relative h-[250px] sm:h-[350px] md:h-[450px] lg:h-[550px] overflow-hidden rounded-2xl shadow-2xl border border-white/10"
             )}
           >
             <AnimatePresence mode="wait">

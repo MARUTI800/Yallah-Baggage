@@ -1,15 +1,9 @@
-import DemoOne from "@/components/demo";
-import Footer4Col from "@/components/ui/footer-column";
+import { RevolutionHero } from "@/components/ui/revolution-hero";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col font-sans overflow-x-hidden bg-white">
-      <div className="flex-1 w-full flex flex-col">
-        <DemoOne />
-      </div>
-      <div className="w-full">
-        <Footer4Col />
-      </div>
+    <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#000000] text-white">
+      <RevolutionHero />
     </main>
   );
 }
