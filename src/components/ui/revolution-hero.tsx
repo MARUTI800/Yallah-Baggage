@@ -4,6 +4,7 @@ import React from "react"
 import { RideBookingForm } from "@/components/ui/ride-booking-form"
 import { Logos3 } from "@/components/ui/logos3"
 import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel"
+import Footer4Col from "@/components/ui/footer-column"
 import { PartnershipInquiry } from "@/components/ui/partnership-inquiry"
 import { FaqAccordion } from "@/components/ui/faq-chat-accordion"
 import { motion, AnimatePresence } from "framer-motion"
@@ -482,6 +483,8 @@ export const RevolutionHero = () => {
           </motion.div>
         </div>
       </section>
+
+      <Footer4Col />
     </div>
   )
 }

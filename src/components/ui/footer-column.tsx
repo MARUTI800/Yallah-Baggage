@@ -56,7 +56,7 @@ export default function Footer4Col() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5">
-              <Image src="/Logo_monochrome.png" alt="Yallah Baggage" width={150} height={40} className="h-10 w-auto object-contain" />
+              <Image src="/Logo_primary.png" alt="Yallah Baggage" width={150} height={40} className="h-10 w-auto object-contain brightness-0 invert" />
             </div>
             <p className="text-white/50 mt-5 max-w-xs text-sm leading-relaxed font-medium">
               {data.company.description}
