@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
+import { motion } from "framer-motion";
 import { Headphones, Briefcase, Clock, Timer, ShieldCheck } from "lucide-react";
-import { BlurIn } from "@/components/ui/blur-in";
 
 const stats = [
   {
@@ -14,7 +13,7 @@ const stats = [
   },
   {
     icon: Briefcase,
-    value: "45k+",
+    value: "2.5k+",
     label: "Bags Handled",
     iconColor: "text-orange-500",
     bg: "bg-orange-500/10"
@@ -50,10 +49,14 @@ export function TrustStats() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 flex flex-col items-center">
-          <BlurIn
-            word="Trusted by thousands of travelers"
+          <motion.h2
+            initial={{ opacity: 0, filter: "blur(10px)" }}
+            whileInView={{ opacity: 1, filter: "blur(0px)" }}
+            transition={{ duration: 1 }}
             className="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-6 tracking-tight text-balance"
-          />
+          >
+            Trusted by thousands of travelers
+          </motion.h2>
           <div className="w-24 h-1.5 bg-gradient-to-r from-orange-400 to-yellow-400 mx-auto rounded-full animate-in fade-in zoom-in duration-1000 delay-300" />
         </div>
 

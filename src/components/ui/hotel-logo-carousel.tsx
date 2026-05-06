@@ -1,80 +1,25 @@
 "use client";
 
-import React, { type SVGProps } from "react";
-import { GradientHeading } from "@/components/ui/gradient-heading";
+import React from "react";
 import { LogoCarousel } from "@/components/ui/logo-carousel";
-import { BlurIn } from "@/components/ui/blur-in";
+import { cn } from "@/lib/utils";
 
-const createTextLogo = (text1: string, text2: string) => {
-  return function TextLogo(props: SVGProps<SVGSVGElement>) {
-    return (
-      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <rect width="200" height="100" rx="16" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1" />
-        <text 
-          x="100" 
-          y="48" 
-          fontSize="20" 
-          fontWeight="900" 
-          fill="#0f172a" 
-          textAnchor="middle" 
-          fontFamily="system-ui, sans-serif"
-          letterSpacing="-0.02em"
-        >
-          {text1}
-        </text>
-        <text 
-          x="100" 
-          y="72" 
-          fontSize="14" 
-          fontWeight="600" 
-          fill="#64748b" 
-          textAnchor="middle" 
-          fontFamily="system-ui, sans-serif"
-        >
-          {text2}
-        </text>
-      </svg>
-    )
-  }
+interface IconProps {
+  className?: string;
 }
 
-const createSingleLineLogo = (text1: string) => {
-  return function SingleLineLogo(props: SVGProps<SVGSVGElement>) {
-    return (
-      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <rect width="200" height="100" rx="16" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1" />
-        <text 
-          x="100" 
-          y="56" 
-          fontSize="24" 
-          fontWeight="900" 
-          fill="#0f172a" 
-          textAnchor="middle" 
-          fontFamily="system-ui, sans-serif"
-          letterSpacing="-0.02em"
-        >
-          {text1}
-        </text>
-      </svg>
-    )
-  }
-}
-
-// 5-Star UAE Hotels Logos generated via Custom SVG
-const AtlantisIcon = (props: any) => (
-  <img src="/atlantis.png" alt="Atlantis The Palm" className={props.className} />
-);
-const BurjAlArabIcon = (props: any) => <img src="/burj_al_arab.png" alt="Burj Al Arab" className={props.className} />;
-const JumeirahIcon = (props: any) => <img src="/jumeirah.png" alt="Jumeirah" className={props.className} />;
-const RitzCarltonIcon = (props: any) => <img src="/ritz.png" alt="Ritz-Carlton" className={props.className} />;
-const KempinskiIcon = (props: any) => <img src="/kempinski.png" alt="Kempinski" className={props.className} />;
-const WaldorfIcon = (props: any) => <img src="/waldorf.png" alt="Waldorf Astoria" className={props.className} />;
-const ArmaniIcon = (props: any) => <img src="/armani.png" alt="Armani Hotel" className={props.className} />;
-const AddressIcon = (props: any) => <img src="/address.png" alt="The Address" className={props.className} />;
-const BulgariIcon = (props: any) => <img src="/bvlgari.png" alt="Bulgari Resort" className={props.className} />;
-const OneAndOnlyIcon = (props: any) => <img src="/one&only.png" alt="One&Only" className={props.className} />;
-const StRegisIcon = (props: any) => <img src="/stregis.png" alt="St. Regis" className={props.className} />;
-const MandarinIcon = (props: any) => <img src="/mandarin.png" alt="Mandarin Oriental" className={props.className} />;
+const AtlantisIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-[0.2em] uppercase">Atlantis</span></div>;
+const BurjAlArabIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-widest uppercase">Burj Al Arab</span></div>;
+const JumeirahIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80", props.className)}><span className="text-2xl tracking-[0.15em] uppercase">Jumeirah</span></div>;
+const RitzCarltonIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-[0.1em] font-bold uppercase">The Ritz-Carlton</span></div>;
+const KempinskiIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-3xl italic tracking-wide">Kempinski</span></div>;
+const WaldorfIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-[0.15em] uppercase">Waldorf Astoria</span></div>;
+const ArmaniIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-2xl tracking-[0.3em] uppercase">Armani</span></div>;
+const AddressIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-widest uppercase">The Address</span></div>;
+const BulgariIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-2xl tracking-[0.35em] uppercase">Bvlgari</span></div>;
+const OneAndOnlyIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl tracking-[0.15em] uppercase">One&Only</span></div>;
+const StRegisIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-2xl tracking-widest uppercase">St. Regis</span></div>;
+const MandarinIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-[1.1rem] tracking-[0.2em] uppercase text-center leading-tight">Mandarin Oriental</span></div>;
 
 const allLogos = [
   { name: "Atlantis", id: 1, img: AtlantisIcon },
@@ -93,20 +38,16 @@ const allLogos = [
 
 export function HotelLogoCarousel() {
   return (
-    <div className="w-full bg-white space-y-8 py-16 md:py-24 border-t border-gray-50 flex flex-col items-center">
-      <div className="mx-auto flex w-full max-w-screen-xl flex-col items-center space-y-6 md:space-y-8 px-4">
+    <div className="w-full bg-white space-y-6 py-16 md:py-20 border-t border-[#E5E5E5] flex flex-col items-center">
+      <div className="mx-auto flex w-full max-w-screen-xl flex-col items-center space-y-4 px-4">
         <div className="text-center flex flex-col items-center gap-2">
-          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-500 mb-0">
-            Trusted by guests staying at
-          </p>
-          <BlurIn 
-            word="The Most Prestigious Hotels in the UAE" 
-            className="text-3xl sm:text-4xl lg:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-t from-neutral-700 to-neutral-800 text-balance leading-tight py-2"
-          />
+          <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-1">Our Partners</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0A2E6D] tracking-tight leading-tight">
+            Trusted by the UAE&apos;s Best Hotels
+          </h2>
         </div>
-
-        <div className="w-full max-w-5xl px-4 mt-8">
-          <LogoCarousel columnCount={4} logos={allLogos} /> 
+        <div className="w-full max-w-5xl px-4 mt-6">
+          <LogoCarousel columnCount={4} logos={allLogos} />
         </div>
       </div>
     </div>

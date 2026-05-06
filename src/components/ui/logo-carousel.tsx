@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  type SVGProps,
 } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 
@@ -113,7 +112,12 @@ interface LogoCarouselProps {
 }
 
 export function LogoCarousel({ columnCount = 2, logos }: LogoCarouselProps) {
-  const [logoSets, setLogoSets] = useState<Logo[][]>([])
+  const [hasMounted, setHasMounted] = useState(false)
+  const logoSets = useMemo(() => {
+    if (!hasMounted) return []
+    return distributeLogos(logos, columnCount)
+  }, [logos, columnCount, hasMounted])
+  
   const [currentTime, setCurrentTime] = useState(0)
 
   const updateTime = useCallback(() => {
@@ -121,14 +125,15 @@ export function LogoCarousel({ columnCount = 2, logos }: LogoCarouselProps) {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasMounted(true)
     const intervalId = setInterval(updateTime, 100)
     return () => clearInterval(intervalId)
   }, [updateTime])
 
-  useEffect(() => {
-    const distributedLogos = distributeLogos(logos, columnCount)
-    setLogoSets(distributedLogos)
-  }, [logos, columnCount])
+  if (!hasMounted) {
+    return <div className="flex flex-wrap justify-center gap-4 py-8 h-32 md:h-40" />
+  }
 
   return (
     <div className="flex flex-wrap justify-center gap-4 py-8">

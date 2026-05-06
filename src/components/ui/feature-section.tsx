@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { BlurIn } from "@/components/ui/blur-in"
+import Image from "next/image"
 
 interface Feature {
   step: string
@@ -17,7 +17,6 @@ interface FeatureStepsProps {
   className?: string
   title?: string
   autoPlayInterval?: number
-  imageHeight?: string
 }
 
 export function FeatureSteps({
@@ -25,7 +24,6 @@ export function FeatureSteps({
   className,
   title = "How to get Started",
   autoPlayInterval = 3000,
-  imageHeight = "h-[400px]",
 }: FeatureStepsProps) {
   const [currentFeature, setCurrentFeature] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -46,10 +44,14 @@ export function FeatureSteps({
   return (
     <div className={cn("py-16 md:py-24 bg-[#000000]", className)}>
       <div className="max-w-7xl mx-auto w-full px-8 md:px-12">
-        <BlurIn 
-          word={title as string} 
-          className="text-3xl md:text-4xl lg:text-5xl font-black mb-12 text-center text-white tracking-tight" 
-        />
+        <motion.h2
+          initial={{ opacity: 0, filter: "blur(10px)" }}
+          whileInView={{ opacity: 1, filter: "blur(0px)" }}
+          transition={{ duration: 1 }}
+          className="text-3xl md:text-4xl lg:text-5xl font-black mb-12 text-center text-white tracking-tight"
+        >
+          {title}
+        </motion.h2>
 
         <div className="flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-16 items-center">
           <div className="w-full order-2 md:order-1 space-y-10">
@@ -109,9 +111,10 @@ export function FeatureSteps({
                       exit={{ y: -50, opacity: 0, scale: 1.05 }}
                       transition={{ duration: 0.6, ease: "easeInOut" }}
                     >
-                      <img
+                      <Image
                         src={feature.image}
                         alt={feature.step}
+                        fill
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />

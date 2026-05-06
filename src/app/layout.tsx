@@ -1,25 +1,28 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://yallahbaggage.com"),
   title: "Yallah Baggage - Dubai's Premier Luggage Concierge",
-  description: "Seamless luggage pickup, storage, and delivery in the UAE. Explore Dubai hands-free from just 29 AED/day.",
+  description: "Travel Light. We'll Handle the Rest. Seamless luggage pickup, storage, and delivery across the UAE.",
   openGraph: {
-    title: "Yallah Baggage | Hands-Free Travel in Dubai",
-    description: "Your bags handled safely, starting from just AED 29/day. We pick up, store, and deliver your luggage anywhere in the UAE.",
+    title: "Yallah Baggage | Travel Light. We'll Handle the Rest.",
+    description: "Your bags handled safely. Door-to-door luggage concierge across Dubai and the UAE.",
     siteName: "Yallah Baggage",
     images: [
       {
         url: "/yalla-form-image.png",
         width: 1200,
         height: 630,
-        alt: "Yallah Baggage Service Illustration",
+        alt: "Yallah Baggage Service",
       },
     ],
     type: "website",
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Yallah Baggage",
-    description: "Seamless luggage pickup, storage, and delivery in the UAE.",
+    description: "Travel Light. We'll Handle the Rest.",
     images: ["/yalla-form-image.png"],
   },
 };
@@ -40,11 +43,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full antialiased scroll-smooth"
+      className={`${poppins.variable} h-full antialiased scroll-smooth`}
     >
       <body 
-        className="min-h-full flex flex-col tracking-tight bg-black text-white"
-        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "San Francisco", "Helvetica Neue", sans-serif' }}
+        className="min-h-full flex flex-col tracking-tight"
+        style={{ fontFamily: 'var(--font-poppins), sans-serif' }}
       >
         {children}
       </body>

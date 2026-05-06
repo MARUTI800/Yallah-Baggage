@@ -2,8 +2,23 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils"; 
-import { MapPin, Navigation, Navigation2, Calendar, Clock, Loader2, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MapPin, Calendar, Clock, Loader2, CheckCircle2, Briefcase, ChevronLeft, ChevronRight } from "lucide-react";
+import { getDubaiTime } from "@/lib/utils";
+
+const getDaysInMonth = (year: number, month: number) => {
+  const date = new Date(year, month, 1);
+  const days = [];
+  while (date.getMonth() === month) {
+    days.push(new Date(date));
+    date.setDate(date.getDate() + 1);
+  }
+  return days;
+};
+
+const getFirstDayOfMonth = (year: number, month: number) => {
+  return new Date(year, month, 1).getDay();
+};
 
 interface RideBookingFormProps extends React.HTMLAttributes<HTMLDivElement> {
   imageUrl: string;
@@ -13,31 +28,27 @@ interface RideBookingFormProps extends React.HTMLAttributes<HTMLDivElement> {
     dropoff: string;
     date: string;
     time: string;
+    pickupDate: string;
+    pickupTime: string;
+    deliveryDate: string;
+    deliveryTime: string;
   }) => void;
 }
 
-interface NominatimResult {
-  place_id: number;
-  lat: string;
-  lon: string;
-  display_name: string;
-  type: string;
+interface GooglePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text: string;
+  };
 }
 
-const generateDates = () => {
-  const dates = [];
-  const now = new Date();
-  for(let i=0; i<14; i++) {
-      const d = new Date(now);
-      d.setDate(now.getDate() + i);
-      dates.push(d);
-  }
-  return dates;
-};
+
 
 const generateTimes = () => {
   const times = [];
-  for(let h=8; h<=22; h++) {
+  for (let h = 8; h <= 22; h++) {
     const period = h >= 12 ? 'PM' : 'AM';
     const hour = h > 12 ? h - 12 : h;
     times.push(`${hour.toString().padStart(2, '0')}:00 ${period}`);
@@ -50,43 +61,272 @@ const formatAppleDate = (d: Date) => {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
+function DateTimePicker({
+  label, isOpen, setIsOpen, selectedDate, setSelectedDate, selectedTime, setSelectedTime, minDateTime
+}: {
+  label: string;
+  isOpen: boolean;
+  setIsOpen: (val: boolean) => void;
+  selectedDate: Date;
+  setSelectedDate: (d: Date) => void;
+  selectedTime: string;
+  setSelectedTime: (t: string) => void;
+  minDateTime?: Date;
+}) {
+  const [currentMonth, setCurrentMonth] = React.useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const availableTimes = React.useMemo(() => generateTimes(), []);
+
+  const nextMonth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+  const prevMonth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const daysInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+  const firstDay = getFirstDayOfMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+  const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  return (
+    <div className={cn("relative flex flex-col w-full group transition-all duration-200", isOpen ? "z-50" : "z-10")}>
+      <div
+        className={cn(
+          "w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent transition-all duration-200 cursor-pointer",
+          isOpen ? "bg-white border-[#1E5BD7] shadow-[0_0_0_4px_rgba(30,91,215,0.1)]" : "hover:bg-white"
+        )}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+            <Calendar className="w-5 h-5 text-[#0A2E6D]" />
+          </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block cursor-pointer">{label}</label>
+            <div className="text-[15px] font-medium text-[#8B7280]">
+              {formatAppleDate(selectedDate)} at {selectedTime}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.15 }}
+            className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[calc(100%-32px)] sm:w-[320px] bg-white border border-[#E5E5E5] rounded-2xl shadow-[0_12px_40px_rgba(10,46,109,0.15)] p-4 origin-top z-[100]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className="text-sm font-bold text-[#0A2E6D]">{monthName}</span>
+              <div className="flex gap-1">
+                <button type="button" onClick={prevMonth} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#F6F2EA] text-[#0A2E6D] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                <button type="button" onClick={nextMonth} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#F6F2EA] text-[#0A2E6D] transition-colors"><ChevronRight className="w-4 h-4" /></button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-0.5 mb-1">
+              {weekDays.map(wd => (
+                <div key={wd} className="text-[10px] font-bold text-[#8B7280] text-center mb-1 uppercase tracking-wider">{wd}</div>
+              ))}
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {daysInMonth.map(day => {
+                const isSelected = day.toDateString() === selectedDate.toDateString();
+                const isToday = day.toDateString() === getDubaiTime().toDateString();
+                
+                const todayDateOnly = getDubaiTime();
+                todayDateOnly.setHours(0,0,0,0);
+                
+                const minDateOnly = minDateTime ? new Date(minDateTime) : new Date(todayDateOnly);
+                minDateOnly.setHours(0,0,0,0);
+                
+                const isPast = day < minDateOnly;
+                
+                return (
+                  <button
+                    key={day.toString()}
+                    type="button"
+                    onClick={() => { if (!isPast) setSelectedDate(day); }}
+                    disabled={isPast}
+                    className={cn(
+                      "w-7 h-7 mx-auto flex items-center justify-center rounded-full text-xs font-medium transition-all mb-1",
+                      isPast ? "text-[#8B7280]/30 cursor-not-allowed" :
+                      isSelected ? "bg-[#1E5BD7] text-white shadow-md font-bold scale-105" : 
+                      isToday ? "text-[#1E5BD7] font-bold border border-[#1E5BD7]/20" : 
+                      "text-[#0A2E6D] hover:bg-[#F6F2EA]"
+                    )}
+                  >
+                    {day.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <div className="mt-3 pt-3 border-t border-[#E5E5E5]">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <Clock className="w-4 h-4 text-[#8B7280]" />
+                <span className="text-xs font-bold text-[#0A2E6D]">Time</span>
+              </div>
+              <div className="flex overflow-x-auto pb-1 gap-2 snap-x scrollbar-hide">
+                {availableTimes.map(t => {
+                  let isTimeDisabled = false;
+                  if (minDateTime) {
+                    const selDateOnly = new Date(selectedDate);
+                    selDateOnly.setHours(0,0,0,0);
+                    const minDOnly = new Date(minDateTime);
+                    minDOnly.setHours(0,0,0,0);
+                    
+                    if (selDateOnly.getTime() === minDOnly.getTime()) {
+                      const match = t.match(/(\d+):(\d+)\s(AM|PM)/);
+                      if (match) {
+                        let h = parseInt(match[1]);
+                        const m = parseInt(match[2]);
+                        const isPM = match[3] === "PM";
+                        if (isPM && h !== 12) h += 12;
+                        if (!isPM && h === 12) h = 0;
+                        const tDate = new Date(selectedDate);
+                        tDate.setHours(h, m, 0, 0);
+                        if (tDate.getTime() <= minDateTime.getTime()) {
+                          isTimeDisabled = true;
+                        }
+                      }
+                    } else if (selDateOnly.getTime() < minDOnly.getTime()) {
+                      isTimeDisabled = true;
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={isTimeDisabled}
+                      onClick={() => {
+                        if (!isTimeDisabled) {
+                          setSelectedTime(t);
+                          setIsOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all snap-start",
+                        isTimeDisabled ? "bg-[#F6F2EA]/50 text-[#8B7280]/40 cursor-not-allowed" :
+                        selectedTime === t 
+                          ? "bg-[#1E5BD7] text-white shadow-md font-bold" 
+                          : "bg-[#F6F2EA] text-[#0A2E6D] hover:bg-[#E5E5E5]"
+                      )}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export const RideBookingForm = React.forwardRef<HTMLDivElement, RideBookingFormProps>(
-  ({ className, imageUrl, city = "Dubai, UAE", onSearch, ...props }, ref) => {
-    
+  ({ className, imageUrl: _imageUrl, city: _city, onSearch, ...props }, ref) => {
+
     const [pickup, setPickup] = React.useState("");
-    const [pickupResults, setPickupResults] = React.useState<NominatimResult[]>([]);
-    const [pickupSelected, setPickupSelected] = React.useState<NominatimResult | null>(null);
+    const [pickupResults, setPickupResults] = React.useState<GooglePrediction[]>([]);
+    const [pickupSelected, setPickupSelected] = React.useState<GooglePrediction | null>(null);
     const [pickupFocused, setPickupFocused] = React.useState(false);
     const [pickupLoading, setPickupLoading] = React.useState(false);
 
     const [dropoff, setDropoff] = React.useState("");
-    const [dropoffResults, setDropoffResults] = React.useState<NominatimResult[]>([]);
-    const [dropoffSelected, setDropoffSelected] = React.useState<NominatimResult | null>(null);
+    const [dropoffResults, setDropoffResults] = React.useState<GooglePrediction[]>([]);
+    const [dropoffSelected, setDropoffSelected] = React.useState<GooglePrediction | null>(null);
     const [dropoffFocused, setDropoffFocused] = React.useState(false);
     const [dropoffLoading, setDropoffLoading] = React.useState(false);
 
-    const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
-    const [selectedTime, setSelectedTime] = React.useState("12:00 PM");
-    const [showDatePicker, setShowDatePicker] = React.useState(false);
-    const [showTimePicker, setShowTimePicker] = React.useState(false);
-    
-    const availableDates = React.useMemo(() => generateDates(), []);
-    const availableTimes = React.useMemo(() => generateTimes(), []);
+    const [pickupDate, setPickupDate] = React.useState<Date>(new Date());
+    const [pickupTime, setPickupTime] = React.useState("12:00 PM");
+    const [showPickupDatePicker, setShowPickupDatePicker] = React.useState(false);
 
-    const [activeMapPreview, setActiveMapPreview] = React.useState<NominatimResult | null>(null);
+    const [deliveryDate, setDeliveryDate] = React.useState<Date>(new Date());
+    const [deliveryTime, setDeliveryTime] = React.useState("04:00 PM");
+    const [showDeliveryDatePicker, setShowDeliveryDatePicker] = React.useState(false);
+    const [hasMounted, setHasMounted] = React.useState(false);
+
+    React.useEffect(() => {
+      setHasMounted(true);
+      setPickupDate(getDubaiTime());
+      const later = new Date(getDubaiTime().getTime() + 4 * 60 * 60 * 1000);
+      setDeliveryDate(new Date(later.getFullYear(), later.getMonth(), later.getDate()));
+
+      let h = later.getHours();
+      const period = h >= 12 ? "PM" : "AM";
+      const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+      setDeliveryTime(`${hour.toString().padStart(2, "0")}:00 ${period}`);
+    }, []);
+
+    const pickupDateTime = React.useMemo(() => {
+      const match = pickupTime.match(/(\d+):(\d+)\s(AM|PM)/);
+      if (!match) return pickupDate;
+      let h = parseInt(match[1]);
+      const m = parseInt(match[2]);
+      const isPM = match[3] === "PM";
+      if (isPM && h !== 12) h += 12;
+      if (!isPM && h === 12) h = 0;
+
+      const dt = new Date(pickupDate);
+      dt.setHours(h, m, 0, 0);
+      return dt;
+    }, [pickupDate, pickupTime]);
+
+    React.useEffect(() => {
+      const match = deliveryTime.match(/(\d+):(\d+)\s(AM|PM)/);
+      let dh = 0, dm = 0;
+      if (match) {
+        dh = parseInt(match[1]);
+        dm = parseInt(match[2]);
+        if (match[3] === "PM" && dh !== 12) dh += 12;
+        if (match[3] === "AM" && dh === 12) dh = 0;
+      }
+      const ddt = new Date(deliveryDate);
+      ddt.setHours(dh, dm, 0, 0);
+
+      if (ddt.getTime() <= pickupDateTime.getTime()) {
+        const newDDT = new Date(pickupDateTime.getTime() + 60 * 60 * 1000); // +1 hour minimum
+        setDeliveryDate(new Date(newDDT.getFullYear(), newDDT.getMonth(), newDDT.getDate()));
+
+        let h = newDDT.getHours();
+        let m = newDDT.getMinutes();
+        m = m <= 30 ? 30 : 0;
+        if (m === 0) h += 1;
+
+        const period = h >= 12 ? "PM" : "AM";
+        const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+        setDeliveryTime(`${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${period}`);
+      }
+    }, [pickupDateTime, deliveryDate, deliveryTime]);
+
+    const [activeMapPreview, setActiveMapPreview] = React.useState<{ lat: string; lon: string; display_name: string } | null>(null);
+
+
 
     React.useEffect(() => {
       const search = async () => {
-        if (!pickup || pickup.length < 3 || pickupSelected?.display_name === pickup) {
+        if (!pickup || pickup.length < 2 || pickupSelected?.description === pickup) {
           setPickupResults([]);
           return;
         }
         setPickupLoading(true);
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(pickup)}&format=json&limit=6`);
+          const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(pickup)}`);
           const data = await res.json();
-          setPickupResults(data);
-        } catch (e) {} finally { setPickupLoading(false); }
+          setPickupResults(data.predictions || []);
+        } catch { } finally { setPickupLoading(false); }
       };
       const tid = setTimeout(search, 300);
       return () => clearTimeout(tid);
@@ -94,260 +334,232 @@ export const RideBookingForm = React.forwardRef<HTMLDivElement, RideBookingFormP
 
     React.useEffect(() => {
       const search = async () => {
-        if (!dropoff || dropoff.length < 3 || dropoffSelected?.display_name === dropoff) {
+        if (!dropoff || dropoff.length < 2 || dropoffSelected?.description === dropoff) {
           setDropoffResults([]);
           return;
         }
         setDropoffLoading(true);
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dropoff)}&format=json&limit=6`);
+          const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(dropoff)}`);
           const data = await res.json();
-          setDropoffResults(data);
-        } catch (e) {} finally { setDropoffLoading(false); }
+          setDropoffResults(data.predictions || []);
+        } catch { } finally { setDropoffLoading(false); }
       };
       const tid = setTimeout(search, 300);
       return () => clearTimeout(tid);
     }, [dropoff, dropoffSelected]);
 
+    const selectPickup = async (loc: GooglePrediction) => {
+      const mainText = loc.structured_formatting?.main_text || loc.description.split(",")[0];
+      setPickupSelected(loc);
+      setPickup(mainText);
+      try {
+        const res = await fetch(`/api/places/details?place_id=${loc.place_id}`);
+        const data = await res.json();
+        if (data.lat && data.lon) {
+          setActiveMapPreview({ lat: data.lat.toString(), lon: data.lon.toString(), display_name: mainText });
+        }
+      } catch { /* ignore */ }
+    };
+
+    const selectDropoff = async (loc: GooglePrediction) => {
+      const mainText = loc.structured_formatting?.main_text || loc.description.split(",")[0];
+      setDropoffSelected(loc);
+      setDropoff(mainText);
+      try {
+        const res = await fetch(`/api/places/details?place_id=${loc.place_id}`);
+        const data = await res.json();
+        if (data.lat && data.lon) {
+          setActiveMapPreview({ lat: data.lat.toString(), lon: data.lon.toString(), display_name: mainText });
+        }
+      } catch { /* ignore */ }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      onSearch({ pickup, dropoff, date: formatAppleDate(selectedDate), time: selectedTime });
+      onSearch({
+        pickup, dropoff,
+        date: formatAppleDate(pickupDate), time: pickupTime,
+        pickupDate: formatAppleDate(pickupDate), pickupTime,
+        deliveryDate: formatAppleDate(deliveryDate), deliveryTime
+      });
     };
-    
+
     const formRef = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (formRef.current && !formRef.current.contains(event.target as Node)) {
-          setShowDatePicker(false);
-          setShowTimePicker(false);
+          setShowPickupDatePicker(false);
+          setShowDeliveryDatePicker(false);
         }
       }
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const containerVariants: any = {
-      hidden: { opacity: 0, y: 30 },
-      visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } },
-    };
+    if (!hasMounted) return <div className="min-h-[520px] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#0A2E6D] animate-spin" /></div>;
 
     return (
-      <div className={cn("w-full max-w-6xl mx-auto md:p-4 font-inter", className)} ref={ref} {...props}>
-        <motion.div 
-          className="grid grid-cols-1 lg:grid-cols-2 bg-[#080808] rounded-[2rem] lg:rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden min-h-[560px]"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+      <div className={cn("w-full max-w-3xl mx-auto", className)} ref={ref} {...props}>
+        <motion.div
+          className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-2xl shadow-[0_4px_40px_rgba(10,46,109,0.08)] border border-[#E5E5E5] min-h-[520px]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
           {/* Left Side: Booking Form */}
           <div className="p-8 sm:p-12 relative z-20 flex flex-col h-full justify-center" ref={formRef}>
-            
-            <div className="mb-8">
-              <h2 className="text-[3rem] lg:text-[3.5rem] font-bold text-white leading-[0.95] tracking-tighter mb-2 selection:bg-orange-500 selection:text-white">
-                Book a transfer.
+
+            <div className="mb-10">
+              <h2 className="text-3xl lg:text-[2.5rem] font-bold text-[#0A2E6D] leading-[1.1] tracking-tight mb-2">
+                Book your luggage delivery
               </h2>
-              <p className="text-white/50 font-medium text-lg tracking-tight">Secure. Hands-free. Direct.</p>
+              <p className="text-[#8B7280] font-medium text-lg">in a few easy steps.</p>
             </div>
 
-             <form onSubmit={handleSubmit} className="space-y-4">
-              
-              <div className="relative">
+            <form onSubmit={handleSubmit} className="space-y-3">
+
+              {/* Block-style Inputs matching App Screen Mockup */}
+              <div className="flex flex-col gap-4">
+
                 {/* PICKUP */}
-                <div className="relative flex flex-col w-full z-30 group mb-4">
-                  <div className="w-full relative bg-white/5 hover:bg-white/10 rounded-[1.25rem] px-5 py-3.5 border border-transparent focus-within:bg-[#111] focus-within:border-white/20 transition-all duration-300 ease-out">
-                    <label className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase text-white/40 mb-1 block group-focus-within:text-white transition-colors">Pick up location</label>
-                    <div className="flex items-center">
-                       <input
-                         type="text"
-                         placeholder="Enter hotel or address"
-                         value={pickup}
-                         onChange={(e) => { setPickup(e.target.value); setPickupSelected(null); }}
-                         onFocus={() => setPickupFocused(true)}
-                         onBlur={() => setTimeout(() => setPickupFocused(false), 200)}
-                         className="w-full text-[1.3rem] tracking-tight font-medium text-white focus:outline-none bg-transparent placeholder-white/20"
-                         aria-label="Pickup location"
-                       />
-                       {pickupLoading && <Loader2 className="h-5 w-5 text-white/40 animate-spin absolute right-4" />}
-                       {pickupSelected && !pickupLoading && <MapPin className="h-5 w-5 text-green-400 absolute right-4 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />}
+                <div className="relative flex flex-col w-full z-30 group">
+                  <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+                        <MapPin className="w-5 h-5 text-[#0A2E6D]" />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block">Pickup</label>
+                        <input
+                          type="text"
+                          placeholder="Airport / Hotel / Address"
+                          value={pickup}
+                          onChange={(e) => { setPickup(e.target.value); setPickupSelected(null); }}
+                          onFocus={() => setPickupFocused(true)}
+                          onBlur={() => setTimeout(() => setPickupFocused(false), 200)}
+                          className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60"
+                          aria-label="Pickup location"
+                        />
+                      </div>
+                      {pickupLoading && <Loader2 className="h-5 w-5 text-[#8B7280] animate-spin flex-shrink-0" />}
+                      {pickupSelected && !pickupLoading && <CheckCircle2 className="h-5 w-5 text-[#1E5BD7] flex-shrink-0" />}
                     </div>
-                    
+
                     <AnimatePresence>
-                      {pickupFocused && pickup.length >= 3 && !pickupSelected && pickupResults.length > 0 && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 5, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 0, scale: 0.98 }} transition={{ duration: 0.2, ease: [0.16,1,0.3,1] }}
-                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#161616]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] overflow-hidden z-[100] py-2"
+                      {pickupFocused && pickup.length >= 2 && !pickupSelected && pickupResults.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.15 }}
+                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_8px_30px_rgba(10,46,109,0.12)] z-[100] py-2"
                         >
                           {pickupResults.map(loc => {
-                            const name = loc.display_name.split(", ")[0];
-                            const subtitle = loc.display_name.split(", ").slice(1, 3).join(", ");
+                            const mainText = loc.structured_formatting?.main_text || loc.description.split(",")[0];
+                            const subtitle = loc.structured_formatting?.secondary_text || loc.description.split(",").slice(1).join(",");
                             return (
-                            <div 
-                              key={loc.place_id}
-                              onClick={() => { setPickupSelected(loc); setPickup(name); setActiveMapPreview(loc); }}
-                              className="px-5 py-3 hover:bg-white/5 cursor-pointer flex items-center transition-colors group/item"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mr-4 group-hover/item:bg-white group-hover/item:text-black transition-colors duration-300">
-                                <MapPin className="w-4 h-4 text-white/40 group-hover/item:text-black" />
+                              <div
+                                key={loc.place_id}
+                                onClick={() => selectPickup(loc)}
+                                className="px-5 py-3 hover:bg-[#F6F2EA] cursor-pointer flex items-center transition-colors"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[#F6F2EA] flex items-center justify-center mr-3 flex-shrink-0">
+                                  <MapPin className="w-4 h-4 text-[#0A2E6D]" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-sm text-[#0A2E6D] font-bold truncate">{mainText}</span>
+                                  {subtitle && <span className="text-xs text-[#8B7280] truncate">{subtitle}</span>}
+                                </div>
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-base tracking-tight text-white font-medium truncate">{name}</span>
-                                {subtitle && <span className="text-sm tracking-tight text-white/40 truncate">{subtitle}</span>}
-                              </div>
-                            </div>
-                          )})}
+                            )
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                 </div>
 
-                {/* DROPOFF */}
+                {/* DELIVERY */}
                 <div className="relative flex flex-col w-full z-20 group">
-                  <div className="w-full relative bg-white/5 hover:bg-white/10 rounded-[1.25rem] px-5 py-3.5 border border-transparent focus-within:bg-[#111] focus-within:border-white/20 transition-all duration-300 ease-out">
-                    <label className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase text-white/40 mb-1 block group-focus-within:text-white transition-colors">Drop off location</label>
-                    <div className="flex items-center">
-                       <input
-                         type="text"
-                         placeholder="Airport, Port, or Hotel"
-                         value={dropoff}
-                         onChange={(e) => { setDropoff(e.target.value); setDropoffSelected(null); }}
-                         onFocus={() => setDropoffFocused(true)}
-                         onBlur={() => setTimeout(() => setDropoffFocused(false), 200)}
-                         className="w-full text-[1.3rem] tracking-tight font-medium text-white focus:outline-none bg-transparent placeholder-white/20"
-                         aria-label="Dropoff location"
-                       />
-                       {dropoffLoading && <Loader2 className="h-5 w-5 text-white/40 animate-spin absolute right-4" />}
-                       {dropoffSelected && !dropoffLoading && <Navigation className="h-5 w-5 text-green-400 absolute right-4 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />}
+                  <div className="w-full relative bg-[#F6F2EA] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+                        <Briefcase className="w-5 h-5 text-[#0A2E6D]" />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block">Delivery</label>
+                        <input
+                          type="text"
+                          placeholder="Airport / Hotel / Address"
+                          value={dropoff}
+                          onChange={(e) => { setDropoff(e.target.value); setDropoffSelected(null); }}
+                          onFocus={() => setDropoffFocused(true)}
+                          onBlur={() => setTimeout(() => setDropoffFocused(false), 200)}
+                          className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60"
+                          aria-label="Delivery location"
+                        />
+                      </div>
+                      {dropoffLoading && <Loader2 className="h-5 w-5 text-[#8B7280] animate-spin flex-shrink-0" />}
+                      {dropoffSelected && !dropoffLoading && <CheckCircle2 className="h-5 w-5 text-[#1E5BD7] flex-shrink-0" />}
                     </div>
 
                     <AnimatePresence>
-                      {dropoffFocused && dropoff.length >= 3 && !dropoffSelected && dropoffResults.length > 0 && (
-                        <motion.div 
-                           initial={{ opacity: 0, y: 5, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 0, scale: 0.98 }} transition={{ duration: 0.2, ease: [0.16,1,0.3,1] }}
-                           className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#161616]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] overflow-hidden z-[100] py-2"
+                      {dropoffFocused && dropoff.length >= 2 && !dropoffSelected && dropoffResults.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.15 }}
+                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_8px_30px_rgba(10,46,109,0.12)] z-[100] py-2"
                         >
                           {dropoffResults.map(loc => {
-                            const name = loc.display_name.split(", ")[0];
-                            const subtitle = loc.display_name.split(", ").slice(1, 3).join(", ");
+                            const mainText = loc.structured_formatting?.main_text || loc.description.split(",")[0];
+                            const subtitle = loc.structured_formatting?.secondary_text || loc.description.split(",").slice(1).join(",");
                             return (
-                            <div 
-                              key={loc.place_id}
-                              onClick={() => { setDropoffSelected(loc); setDropoff(name); setActiveMapPreview(loc); }}
-                              className="px-5 py-3 hover:bg-white/5 cursor-pointer flex items-center transition-colors group/item"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mr-4 group-hover/item:bg-white transition-colors duration-300">
-                                <Navigation2 className="w-4 h-4 text-white/40 group-hover/item:text-black" />
+                              <div
+                                key={loc.place_id}
+                                onClick={() => selectDropoff(loc)}
+                                className="px-5 py-3 hover:bg-[#F6F2EA] cursor-pointer flex items-center transition-colors"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[#F6F2EA] flex items-center justify-center mr-3 flex-shrink-0">
+                                  <MapPin className="w-4 h-4 text-[#0A2E6D]" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-sm text-[#0A2E6D] font-bold truncate">{mainText}</span>
+                                  {subtitle && <span className="text-xs text-[#8B7280] truncate">{subtitle}</span>}
+                                </div>
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-base tracking-tight text-white font-medium truncate">{name}</span>
-                                {subtitle && <span className="text-sm tracking-tight text-white/40 truncate">{subtitle}</span>}
-                              </div>
-                            </div>
-                          )})}
+                            )
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                 </div>
+
+                {/* Pick-up Date + Time */}
+                <DateTimePicker
+                  label="Pickup Date & Time"
+                  isOpen={showPickupDatePicker}
+                  setIsOpen={setShowPickupDatePicker}
+                  selectedDate={pickupDate}
+                  setSelectedDate={setPickupDate}
+                  selectedTime={pickupTime}
+                  setSelectedTime={setPickupTime}
+                />
+
+                {/* Delivery Date + Time */}
+                <DateTimePicker
+                  label="Delivery Date & Time"
+                  isOpen={showDeliveryDatePicker}
+                  setIsOpen={setShowDeliveryDatePicker}
+                  selectedDate={deliveryDate}
+                  setSelectedDate={setDeliveryDate}
+                  selectedTime={deliveryTime}
+                  setSelectedTime={setDeliveryTime}
+                  minDateTime={pickupDateTime}
+                />
               </div>
 
-              {/* Date + Time pickers */}
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                
-                {/* Date Picker */}
-                <div className="relative">
-                  <div 
-                    onClick={() => { setShowDatePicker(!showDatePicker); setShowTimePicker(false); }}
-                    className="flex flex-col justify-center bg-white/5 hover:bg-white/10 rounded-[1.25rem] px-5 py-3 border border-transparent transition-colors group cursor-pointer h-[4.5rem]"
-                  >
-                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/40 mb-0.5 group-hover:text-white transition-colors">Date</span>
-                    <div className="flex items-center justify-between text-white font-medium text-lg w-full tracking-tight">
-                       <span>{formatAppleDate(selectedDate)}</span>
-                       <Calendar className="w-4 h-4 text-white/50" />
-                    </div>
-                  </div>
-                  
-                  <AnimatePresence>
-                    {showDatePicker && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute bottom-full mb-3 left-0 w-[280px] bg-[#161616]/90 backdrop-blur-2xl border border-white/10 p-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 overflow-hidden"
-                      >
-                         <div className="text-sm font-bold text-white mb-3 ml-2 tracking-tight">Select Date</div>
-                         <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-2 scrollbar-hide">
-                           {availableDates.map((dateObj, idx) => (
-                             <div 
-                               key={idx} 
-                               onClick={() => { setSelectedDate(dateObj); setShowDatePicker(false); }}
-                               className={cn(
-                                 "px-4 py-3 rounded-xl cursor-pointer text-sm font-medium tracking-tight transition-all",
-                                 dateObj.getTime() === selectedDate.getTime() 
-                                   ? "bg-white text-black font-bold shadow-md"
-                                   : "hover:bg-white/10 text-white"
-                               )}
-                             >
-                               {formatAppleDate(dateObj)}
-                             </div>
-                           ))}
-                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                
-                {/* Time Picker */}
-                <div className="relative">
-                  <div 
-                    onClick={() => { setShowTimePicker(!showTimePicker); setShowDatePicker(false); }}
-                    className="flex flex-col justify-center bg-white/5 hover:bg-white/10 rounded-[1.25rem] px-5 py-3 border border-transparent transition-colors group cursor-pointer h-[4.5rem]"
-                  >
-                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/40 mb-0.5 group-hover:text-white transition-colors">Time</span>
-                    <div className="flex items-center justify-between text-white font-medium text-lg w-full tracking-tight">
-                       <span>{selectedTime}</span>
-                       <Clock className="w-4 h-4 text-white/50" />
-                    </div>
-                  </div>
-
-                  <AnimatePresence>
-                    {showTimePicker && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute bottom-full mb-3 right-0 w-[200px] bg-[#161616]/90 backdrop-blur-2xl border border-white/10 p-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 overflow-hidden"
-                      >
-                         <div className="text-sm font-bold text-white mb-3 ml-2 tracking-tight">Select Time</div>
-                         <div className="grid grid-cols-1 gap-1 max-h-[220px] overflow-y-auto pr-2 scrollbar-hide">
-                           {availableTimes.map((t, idx) => (
-                             <div 
-                               key={idx} 
-                               onClick={() => { setSelectedTime(t); setShowTimePicker(false); }}
-                               className={cn(
-                                 "px-4 py-2.5 rounded-xl cursor-pointer text-sm font-medium tracking-tight transition-all text-center",
-                                 t === selectedTime 
-                                   ? "bg-white text-black font-bold shadow-md"
-                                   : "hover:bg-white/10 text-white"
-                               )}
-                             >
-                               {t}
-                             </div>
-                           ))}
-                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* CTA */}
-              <div className="pt-6">
+              <div className="pt-10">
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center px-8 h-16 rounded-[1.25rem] text-[1.15rem] font-bold tracking-tight transition-all bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 text-black shadow-[0_15px_45px_-10px_rgba(249,115,22,0.6)] hover:shadow-[0_20px_60px_-10px_rgba(249,115,22,0.8)] active:scale-[0.98] duration-500"
+                  className="w-full flex items-center justify-center px-4 h-14 rounded-full text-[15px] font-bold transition-all bg-[#0A2E6D] text-white hover:bg-[#0A2E6D]/90 active:scale-[0.98] shadow-md duration-200"
                 >
                   Continue
                 </button>
@@ -355,11 +567,11 @@ export const RideBookingForm = React.forwardRef<HTMLDivElement, RideBookingFormP
             </form>
           </div>
 
-          {/* Right Side: Live Map — defaults to Dubai, updates on location select */}
-          <div className="hidden lg:block relative w-full h-full bg-[#0a0a0a] overflow-hidden">
+          {/* Right Side: Map */}
+          <div className="hidden lg:block relative w-full h-full bg-[#F6F2EA] overflow-hidden rounded-r-2xl">
             <iframe
               key={activeMapPreview ? `${activeMapPreview.lat},${activeMapPreview.lon}` : "dubai-default"}
-              className="absolute inset-0 w-full h-full mix-blend-screen opacity-80 contrast-125 grayscale-[30%] transition-opacity duration-700"
+              className="absolute inset-0 w-full h-full"
               style={{ border: 0 }}
               loading="lazy"
               src={
@@ -368,18 +580,17 @@ export const RideBookingForm = React.forwardRef<HTMLDivElement, RideBookingFormP
                   : `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=12&ie=UTF8&iwloc=&output=embed`
               }
             />
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#080808] to-transparent z-10 pointer-events-none" />
 
             <AnimatePresence>
               {activeMapPreview && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute bottom-6 inset-x-0 flex justify-center z-20"
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute bottom-5 inset-x-0 flex justify-center z-20"
                 >
-                  <div className="bg-black/70 backdrop-blur-xl border border-white/10 px-5 py-3 rounded-full flex items-center gap-2 shadow-[0_10px_40px_rgba(0,0,0,0.9)]">
-                    <CheckCircle2 className="w-4 h-4 text-green-400 drop-shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
-                    <span className="text-white text-sm font-semibold tracking-tight">
+                  <div className="bg-white border border-[#E5E5E5] px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg">
+                    <CheckCircle2 className="w-4 h-4 text-[#1E5BD7]" />
+                    <span className="text-[#0A2E6D] text-sm font-semibold">
                       {activeMapPreview.display_name.split(", ")[0]}
                     </span>
                   </div>
@@ -391,11 +602,11 @@ export const RideBookingForm = React.forwardRef<HTMLDivElement, RideBookingFormP
               {!activeMapPreview && (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="absolute bottom-6 inset-x-0 flex justify-center z-20"
+                  className="absolute bottom-5 inset-x-0 flex justify-center z-20"
                 >
-                  <div className="bg-black/50 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-full flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-white/50" />
-                    <span className="text-white/50 text-xs font-medium tracking-widest uppercase">Dubai, UAE</span>
+                  <div className="bg-white/90 backdrop-blur-sm border border-[#E5E5E5] px-4 py-2 rounded-lg flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#1E5BD7]" />
+                    <span className="text-[#0A2E6D] text-xs font-semibold tracking-wide uppercase">Dubai, UAE</span>
                   </div>
                 </motion.div>
               )}

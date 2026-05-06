@@ -25,16 +25,16 @@ interface FaqAccordionProps {
 export function FaqAccordion({
   data,
   className,
-  timestamp = "Every day, 9:01 AM",
+  timestamp = "",
   questionClassName,
   answerClassName,
 }: FaqAccordionProps) {
   const [openItem, setOpenItem] = React.useState<string | null>(null);
 
   return (
-    <div className={cn("p-4 md:p-8", className)}>
+    <div className={cn("", className)}>
       {timestamp && (
-        <div className="mb-6 text-sm font-medium text-gray-500 text-center">{timestamp}</div>
+        <div className="mb-6 text-sm font-medium text-[#8B7280] text-center">{timestamp}</div>
       )}
 
       <Accordion.Root
@@ -42,55 +42,38 @@ export function FaqAccordion({
         collapsible
         value={openItem || ""}
         onValueChange={(value) => setOpenItem(value)}
-        className="w-full space-y-4"
+        className="w-full space-y-2"
       >
         {data.map((item) => (
           <Accordion.Item 
             value={item.id.toString()} 
             key={item.id} 
-            className="w-full"
+            className="w-full border-b border-[#E5E5E5]"
           >
             <Accordion.Header className="w-full flex">
               <Accordion.Trigger className="flex w-full items-center justify-between gap-x-4 group outline-none">
                 <div
                   className={cn(
-                    "relative flex-1 flex items-center rounded-2xl p-4 md:p-5 transition-all duration-300 text-left",
+                    "relative flex-1 flex items-center py-5 transition-all duration-200 text-left",
                     openItem === item.id.toString() 
-                      ? "bg-orange-500/10 text-white shadow-md transform scale-[1.02] border border-orange-500/20" 
-                      : "bg-white/5 hover:bg-white/10 text-white/80 shadow-sm border border-transparent",
+                      ? "text-[#0A2E6D]" 
+                      : "text-[#0A2E6D] hover:text-[#1E5BD7]",
                     questionClassName
                   )}
                 >
-                  {item.icon && (
-                    <span
-                      className={cn(
-                        "absolute -top-3 text-2xl drop-shadow-md",
-                        item.iconPosition === "right" ? "-right-2" : "-left-2"
-                      )}
-                      style={{
-                        transform: item.iconPosition === "right" 
-                          ? "rotate(12deg)" 
-                          : "rotate(-12deg)",
-                      }}
-                    >
-                      {item.icon}
-                    </span>
-                  )}
-                  <span className="font-bold text-lg md:text-xl pr-4">{item.question}</span>
+                  <span className="font-semibold text-lg md:text-xl pr-4">{item.question}</span>
                 </div>
 
                 <div 
                   className={cn(
-                    "shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm border",
-                    openItem === item.id.toString() 
-                      ? "bg-orange-500 text-black border-orange-500 transform rotate-180"
-                      : "bg-white/5 text-white/40 group-hover:bg-white/10 border-white/10"
+                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
+                    openItem === item.id.toString() ? "bg-[#F6F2EA]" : "bg-transparent"
                   )}
                 >
                   {openItem === item.id.toString() ? (
-                    <Minus className="h-5 w-5" />
+                    <Minus className="h-5 w-5 text-[#0A2E6D]" />
                   ) : (
-                    <Plus className="h-5 w-5" />
+                    <Plus className="h-5 w-5 text-[#8B7280] group-hover:text-[#0A2E6D]" />
                   )}
                 </div>
               </Accordion.Trigger>
@@ -100,16 +83,16 @@ export function FaqAccordion({
                 initial="collapsed"
                 animate={openItem === item.id.toString() ? "open" : "collapsed"}
                 variants={{
-                  open: { opacity: 1, height: "auto", marginTop: 12 },
-                  collapsed: { opacity: 0, height: 0, marginTop: 0 },
+                  open: { opacity: 1, height: "auto" },
+                  collapsed: { opacity: 0, height: 0 },
                 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 className="overflow-hidden"
               >
-                <div className="ml-4 md:ml-8 lg:ml-12 mb-4">
+                <div className="pb-5">
                   <div
                     className={cn(
-                      "relative max-w-2xl rounded-2xl rounded-tl-none bg-white/5 border border-white/10 px-6 py-4 text-white/70 font-medium shadow-md text-base md:text-lg",
+                      "text-[#8B7280] text-base leading-relaxed max-w-3xl",
                       answerClassName
                     )}
                   >
