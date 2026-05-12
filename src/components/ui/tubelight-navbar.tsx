@@ -1,56 +1,54 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { motion } from "framer-motion"
-import Link from "next/link"
-import { LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
-  name: string
-  url: string
-  icon: LucideIcon
+  name: string;
+  url: string;
+  icon: LucideIcon;
 }
 
 interface NavBarProps {
-  items: NavItem[]
-  className?: string
+  items: NavItem[];
+  className?: string;
 }
 
 export function NavBar({ items, className }: NavBarProps) {
-  const [activeTab, setActiveTab] = useState(items[0].name)
+  const [activeTab, setActiveTab] = useState(items[0].name);
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
-    setActiveTab(item.name)
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    item: NavItem,
+  ) => {
+    setActiveTab(item.name);
 
     // Smooth-scroll for in-page hash links.
     if (item.url.startsWith("#")) {
-      const id = item.url.slice(1)
-      if (!id) return
+      const id = item.url.slice(1);
+      if (!id) return;
 
-      e.preventDefault()
-      const el = document.getElementById(id)
+      e.preventDefault();
+      const el = document.getElementById(id);
       if (el) {
-        window.history.pushState(null, "", item.url)
-        el.scrollIntoView({ behavior: "smooth", block: "start" })
+        window.history.pushState(null, "", item.url);
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
         // If the element doesn't exist, fall back to updating the hash.
-        window.history.pushState(null, "", item.url)
+        window.history.pushState(null, "", item.url);
       }
     }
-  }
+  };
 
   return (
-    <div
-      className={cn(
-        "z-50",
-        className,
-      )}
-    >
+    <div className={cn("z-50", className)}>
       <div className="flex items-center gap-1 sm:gap-3 bg-black/60 border border-white/10 backdrop-blur-xl py-1.5 px-2 rounded-full shadow-2xl">
         {items.map((item) => {
-          const Icon = item.icon
-          const isActive = activeTab === item.name
+          const Icon = item.icon;
+          const isActive = activeTab === item.name;
 
           return (
             <Link
@@ -86,9 +84,9 @@ export function NavBar({ items, className }: NavBarProps) {
                 </motion.div>
               )}
             </Link>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

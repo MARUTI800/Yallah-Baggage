@@ -1,109 +1,50 @@
-"use client"
+"use client";
 
-import React from "react"
-import { RideBookingForm } from "@/components/ui/ride-booking-form"
-import { Logos3 } from "@/components/ui/logos3"
-import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel"
-import Footer4Col from "@/components/ui/footer-column"
-import { FaqAccordion } from "@/components/ui/faq-chat-accordion"
-import { motion, AnimatePresence } from "framer-motion"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Menu, X, Luggage, ShieldCheck, Clock, ArrowRight, MapPin } from "lucide-react"
-
-const faqData = [
-  {
-    id: 1,
-    question: "Where can I leave my bags in Dubai?",
-    answer: "With Yallah Baggage, you don't even need to find a location! We pick up your bags directly from any hotel, port, or address in the UAE and handle the storage for you.",
-  },
-  {
-    id: 2,
-    question: "Do you offer luggage storage at Dubai Airport?",
-    answer: "Yes! We provide seamless luggage storage and transit services directly to and from Dubai International Airport (DXB) and Al Maktoum Airport (DWC).",
-  },
-  {
-    id: 3,
-    question: "How long can I store my luggage?",
-    answer: "You can securely store your luggage with us for as long as you want! Whether you need it held for a few hours between flights or safely stored for several months.",
-  },
-  {
-    id: 4,
-    question: "How does luggage delivery work in the UAE?",
-    answer: "Simply book online, and our concierge driver will collect your bags. You can then explore hands-free while we deliver them safely to your next destination.",
-  },
-  {
-    id: 5,
-    question: "Can I cancel my booking?",
-    answer: "Absolutely. We offer 100% free cancellation up to 2 hours before your scheduled pickup time.",
-  },
-]
-
-const features = [
-  {
-    icon: Luggage,
-    title: "Door to Door",
-    description: "We pick up and deliver your luggage anywhere in Dubai and across the UAE.",
-  },
-  {
-    icon: MapPin,
-    title: "Airport & City",
-    description: "From airports to hotels, and everywhere in between. Full coverage.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Safe & Secure",
-    description: "Your luggage is in safe hands. Fully insured, GPS-tracked, and handled with care.",
-  },
-  {
-    icon: Clock,
-    title: "On Time, Every Time",
-    description: "Reliable service so you can focus on your journey. 99.98% on-time delivery rate.",
-  },
-]
-
-const processSteps = [
-  {
-    number: "01",
-    title: "Book Your Transfer",
-    description: "Schedule your luggage pickup online in seconds. Select your preferred pickup and drop-off locations.",
-    image: "/app_screen.png",
-  },
-  {
-    number: "02",
-    title: "We Collect",
-    description: "Our concierge driver arrives at your location and carefully collects your belongings.",
-    image: "/van_branding.png",
-  },
-  {
-    number: "03",
-    title: "Travel Free",
-    description: "Enjoy your day completely unburdened. Your items arrive safely at your destination.",
-    image: "/delivery_uniform.png",
-  },
-]
+import React from "react";
+import { RideBookingForm } from "@/components/ui/ride-booking-form";
+import { Logos3 } from "@/components/ui/logos3";
+import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel";
+import Footer4Col from "@/components/ui/footer-column";
+import { FaqAccordion } from "@/components/ui/faq-chat-accordion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "@/navigation";
+import Image from "next/image";
+import { useRouter } from "@/navigation";
+import {
+  Menu,
+  X,
+  Luggage,
+  ShieldCheck,
+  Clock,
+  ArrowRight,
+  MapPin,
+} from "lucide-react";
+import LanguageSwitcher from "@/components/ui/language-switcher";
+import { useTranslations, useLocale } from "next-intl";
 
 export const RevolutionHero = () => {
-  const router = useRouter()
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const [scrolled, setScrolled] = React.useState(false)
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRtl = locale === "ar";
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [scrolled, setScrolled] = React.useState(false);
 
   React.useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="w-full flex flex-col font-sans overflow-x-hidden">
-
       {/* ─── Navbar: Clean Uber-style flat ─── */}
       <header
-        className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.06)]"
-          : "bg-transparent"
-          }`}
+        className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+            : "bg-white/70 backdrop-blur-sm"
+        }`}
       >
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
           {/* Logo */}
@@ -121,15 +62,19 @@ export const RevolutionHero = () => {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1">
             {[
-              { label: "Home", id: "home", href: "/" },
-              { label: "Services", id: "services", href: "/" },
-              { label: "How It Works", id: "how-it-works", href: "/" },
-              { label: "FAQ", id: "faq", href: "/" },
-              { label: "Partnerships", href: "/partnerships" },
-              { label: "Track Order", href: "/track" },
+              { label: t("Navigation.home"), id: "home", href: "/" },
+              { label: t("Navigation.services"), id: "services", href: "/" },
+              {
+                label: t("Navigation.howItWorks"),
+                id: "how-it-works",
+                href: "/",
+              },
+              { label: t("Navigation.faq"), id: "faq", href: "/" },
+              { label: t("Navigation.partnerships"), href: "/partnerships" },
+              { label: t("Navigation.trackOrder"), href: "/track" },
             ].map((item) => {
               const isAnchor = item.id;
-              
+
               const handleClick = (e: React.MouseEvent) => {
                 if (isAnchor) {
                   e.preventDefault();
@@ -144,7 +89,7 @@ export const RevolutionHero = () => {
 
                     window.scrollTo({
                       top: offsetPosition,
-                      behavior: "smooth"
+                      behavior: "smooth",
                     });
                   }
                 }
@@ -165,17 +110,24 @@ export const RevolutionHero = () => {
 
           {/* CTA + Mobile Toggle */}
           <div className="flex items-center gap-3">
+            <div className="hidden lg:block">
+              <LanguageSwitcher />
+            </div>
             <Link
               href="/book-now"
               className="hidden sm:flex items-center gap-2 bg-[#0A2E6D] text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-[#0D3A8A] transition-all duration-200 text-[15px] active:scale-[0.98]"
             >
-              Book Now
+              {t("Navigation.bookNow")}
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-[#0A2E6D] hover:bg-[#F6F2EA] transition-colors"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -192,12 +144,23 @@ export const RevolutionHero = () => {
             >
               <div className="px-6 py-4 space-y-1">
                 {[
-                  { label: "Home", id: "home", href: "/" },
-                  { label: "Services", id: "services", href: "/" },
-                  { label: "How It Works", id: "how-it-works", href: "/" },
-                  { label: "FAQ", id: "faq", href: "/" },
-                  { label: "Partnerships", href: "/partnerships" },
-                  { label: "Track Order", href: "/track" },
+                  { label: t("Navigation.home"), id: "home", href: "/" },
+                  {
+                    label: t("Navigation.services"),
+                    id: "services",
+                    href: "/",
+                  },
+                  {
+                    label: t("Navigation.howItWorks"),
+                    id: "how-it-works",
+                    href: "/",
+                  },
+                  { label: t("Navigation.faq"), id: "faq", href: "/" },
+                  {
+                    label: t("Navigation.partnerships"),
+                    href: "/partnerships",
+                  },
+                  { label: t("Navigation.trackOrder"), href: "/track" },
                 ].map((item) => {
                   const isAnchor = item.id;
 
@@ -209,14 +172,15 @@ export const RevolutionHero = () => {
                       const element = document.getElementById(targetId!);
                       if (element) {
                         const offset = 80;
-                        const bodyRect = document.body.getBoundingClientRect().top;
+                        const bodyRect =
+                          document.body.getBoundingClientRect().top;
                         const elementRect = element.getBoundingClientRect().top;
                         const elementPosition = elementRect - bodyRect;
                         const offsetPosition = elementPosition - offset;
 
                         window.scrollTo({
                           top: offsetPosition,
-                          behavior: "smooth"
+                          behavior: "smooth",
                         });
                       }
                     } else {
@@ -245,7 +209,7 @@ export const RevolutionHero = () => {
                     href="/book-now"
                     className="block text-center bg-[#0A2E6D] text-white font-semibold py-3 px-6 rounded-lg mt-3"
                   >
-                    Book Now
+                    {t("Navigation.bookNow")}
                   </Link>
                 </motion.div>
               </div>
@@ -255,9 +219,11 @@ export const RevolutionHero = () => {
       </header>
 
       {/* ─── Hero Section: Clean Split Layout ─── */}
-      <section id="home" className="relative w-full min-h-screen bg-white flex items-center">
+      <section
+        id="home"
+        className="relative w-full min-h-screen bg-white flex items-center"
+      >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-16 pt-[120px] lg:pt-[100px] pb-16 lg:pb-0">
-
           {/* Left: Text Content */}
           <div className="w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left z-10">
             <motion.div
@@ -268,31 +234,33 @@ export const RevolutionHero = () => {
             >
               {/* Tag */}
               <div className="inline-flex items-center gap-2 text-[#0A2E6D] text-sm font-semibold tracking-wide uppercase mb-2">
-                Dubai&apos;s Premier Luggage Concierge
+                {t("Hero.tagline")}
               </div>
 
               {/* Headline */}
               <h1 className="text-[2.75rem] sm:text-6xl lg:text-7xl font-bold text-[#0A2E6D] tracking-tight leading-[1.05]">
-                Travel Light.
+                {t("Hero.title1")}
                 <br />
-                <span className="text-[#1E5BD7]">We&apos;ll Handle</span>
+                <span className="text-[#1E5BD7]">{t("Hero.title2")}</span>
                 <br />
-                the Rest.
+                {t("Hero.title3")}
               </h1>
 
               {/* Subtitle */}
-              <p className="text-lg text-[#8B7280] font-normal max-w-md leading-relaxed">
-                Seamless door-to-door luggage pickup, storage, and delivery across Dubai and the UAE.
+              <p className="text-lg text-[#6B7280] font-normal max-w-md leading-relaxed">
+                {t("Hero.subtitle")}
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link
                   href="/book-now"
-                  className="inline-flex items-center justify-center gap-2 bg-[#0A2E6D] text-white font-medium py-4 px-8 rounded-none hover:bg-[#0A2E6D]/90 transition-all duration-200 text-base active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 bg-[#0A2E6D] text-white font-medium py-4 px-8 rounded-lg hover:bg-[#0A2E6D]/90 transition-all duration-200 text-base active:scale-[0.98]"
                 >
-                  Book a Transfer
-                  <ArrowRight className="w-4 h-4" />
+                  {t("Hero.bookButton")}
+                  <ArrowRight
+                    className={`w-4 h-4 ${isRtl ? "rotate-180" : ""}`}
+                  />
                 </Link>
                 <Link
                   href="/"
@@ -300,25 +268,32 @@ export const RevolutionHero = () => {
                     e.preventDefault();
                     const el = document.getElementById("how-it-works");
                     if (el) {
-                      window.scrollTo({ top: el.offsetTop - 80, behavior: "smooth" });
+                      window.scrollTo({
+                        top: el.offsetTop - 80,
+                        behavior: "smooth",
+                      });
                     }
                   }}
-                  className="inline-flex items-center justify-center gap-2 bg-transparent text-[#0A2E6D] font-medium py-4 px-8 rounded-none border border-[#0A2E6D] hover:bg-[#F6F2EA] transition-all duration-200 text-base"
+                  className="inline-flex items-center justify-center gap-2 bg-transparent text-[#0A2E6D] font-medium py-4 px-8 rounded-lg border border-[#0A2E6D] hover:bg-[#F6F2EA] transition-all duration-200 text-base"
                 >
-                  How It Works
+                  {t("Hero.howItWorksButton")}
                 </Link>
               </div>
 
               {/* Stats Strip */}
               <div className="flex items-center gap-8 pt-6">
                 {[
-                  { value: "2.5k+", label: "Bags Handled" },
-                  { value: "99.98%", label: "On-Time" },
-                  { value: "4.9★", label: "Rating" },
+                  { value: "2.5k+", label: t("Hero.bagsHandled") },
+                  { value: "99.98%", label: t("Hero.onTime") },
+                  { value: "4.9★", label: t("Hero.rating") },
                 ].map((stat) => (
                   <div key={stat.label} className="flex flex-col">
-                    <span className="text-2xl font-bold text-[#0A2E6D] tracking-tight">{stat.value}</span>
-                    <span className="text-xs font-medium text-[#8B7280] tracking-wide uppercase">{stat.label}</span>
+                    <span className="text-2xl font-bold text-[#0A2E6D] tracking-tight">
+                      {stat.value}
+                    </span>
+                    <span className="text-xs font-medium text-[#8B7280] tracking-wide uppercase">
+                      {stat.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -329,22 +304,24 @@ export const RevolutionHero = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{
+              duration: 0.7,
+              delay: 0.15,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
             id="booking"
             className="w-full lg:w-[55%] z-20"
           >
             <RideBookingForm
-              imageUrl="/yalla-form-image.png"
-              city="Dubai, UAE"
               onSearch={(d) => {
-                const params = new URLSearchParams()
-                if (d.pickup) params.set("pickup", d.pickup)
-                if (d.dropoff) params.set("dropoff", d.dropoff)
-                if (d.pickupDate) params.set("pickupDate", d.pickupDate)
-                if (d.pickupTime) params.set("pickupTime", d.pickupTime)
-                if (d.deliveryDate) params.set("deliveryDate", d.deliveryDate)
-                if (d.deliveryTime) params.set("deliveryTime", d.deliveryTime)
-                router.push(`/book-now?${params.toString()}`)
+                const params = new URLSearchParams();
+                if (d.pickup) params.set("pickup", d.pickup);
+                if (d.dropoff) params.set("dropoff", d.dropoff);
+                if (d.pickupDate) params.set("pickupDate", d.pickupDate);
+                if (d.pickupTime) params.set("pickupTime", d.pickupTime);
+                if (d.deliveryDate) params.set("deliveryDate", d.deliveryDate);
+                if (d.deliveryTime) params.set("deliveryTime", d.deliveryTime);
+                router.push(`/book-now?${params.toString()}`);
               }}
             />
           </motion.div>
@@ -355,8 +332,29 @@ export const RevolutionHero = () => {
       <section id="services" className="w-full bg-[#F6F2EA] py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-            {features.map((feature, i) => {
-              const Icon = feature.icon
+            {[
+              {
+                icon: Luggage,
+                title: t("Features.doorToDoorTitle"),
+                description: t("Features.doorToDoorDesc"),
+              },
+              {
+                icon: MapPin,
+                title: t("Features.airportCityTitle"),
+                description: t("Features.airportCityDesc"),
+              },
+              {
+                icon: ShieldCheck,
+                title: t("Features.safeSecureTitle"),
+                description: t("Features.safeSecureDesc"),
+              },
+              {
+                icon: Clock,
+                title: t("Features.onTimeTitle"),
+                description: t("Features.onTimeDesc"),
+              },
+            ].map((feature, i) => {
+              const Icon = feature.icon;
               return (
                 <motion.div
                   key={feature.title}
@@ -367,14 +365,21 @@ export const RevolutionHero = () => {
                   className="flex flex-col items-start gap-4"
                 >
                   <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-8 h-8 text-[#0A2E6D]" strokeWidth={1.5} />
+                    <Icon
+                      className="w-8 h-8 text-[#0A2E6D]"
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[#0A2E6D] mb-2">{feature.title}</h3>
-                    <p className="text-base text-[#8B7280] leading-relaxed">{feature.description}</p>
+                    <h3 className="text-lg font-bold text-[#0A2E6D] mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-base text-[#8B7280] leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
                 </motion.div>
-              )
+              );
             })}
           </div>
         </div>
@@ -391,14 +396,41 @@ export const RevolutionHero = () => {
           {/* Section Header */}
           <div className="mb-16 max-w-2xl">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0A2E6D] tracking-tight leading-tight">
-              Simple. Seamless. Effortless.
+              {t("Process.header")}
             </h2>
-            <p className="mt-4 text-lg text-[#8B7280]">Three steps to hands-free travel.</p>
+            <p className="mt-4 text-lg text-[#8B7280]">
+              {t("Process.subheader")}
+            </p>
           </div>
 
           {/* Process Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
-            {processSteps.map((step, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+            {[
+              {
+                number: "01",
+                title: t("Process.step1Title"),
+                description: t("Process.step1Desc"),
+                image: "/app_screen.png",
+              },
+              {
+                number: "02",
+                title: t("Process.step2Title"),
+                description: t("Process.step2Desc"),
+                image: "/delivery_uniform.png",
+              },
+              {
+                number: "03",
+                title: t("Process.step3Title"),
+                description: t("Process.step3Desc"),
+                image: "/van_branding.png",
+              },
+              {
+                number: "04",
+                title: t("Process.step4Title"),
+                description: t("Process.step4Desc"),
+                image: "/luggage_tag.png",
+              },
+            ].map((step, i) => (
               <motion.div
                 key={step.number}
                 initial={{ opacity: 0, y: 24 }}
@@ -408,18 +440,19 @@ export const RevolutionHero = () => {
                 className="flex flex-col group"
               >
                 {/* Image */}
-                <div className="w-full aspect-square overflow-hidden mb-6 bg-transparent relative">
+                <div className="w-full aspect-[4/5] overflow-hidden mb-6 bg-[#F6F2EA] rounded-2xl relative">
                   <Image
                     src={step.image}
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     alt={step.title}
                     fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
                 </div>
                 {/* Content */}
                 <div className="flex flex-col items-start text-left">
                   <div className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#8B7280] mb-2.5">
-                    STEP {step.number}
+                    {t("Process.stepLabel", { number: step.number })}
                   </div>
                   <h3 className="text-[22px] font-bold text-[#0A2E6D] mb-2 tracking-tight">
                     {step.title}
@@ -438,16 +471,21 @@ export const RevolutionHero = () => {
       <section id="faq" className="w-full bg-[#F6F2EA] py-20 lg:py-24">
         <div className="max-w-3xl mx-auto px-6 lg:px-10">
           <div className="mb-12">
-            <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-3">Support</p>
+            <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-3">
+              {t("FAQ.support")}
+            </p>
             <h2 className="text-4xl md:text-5xl font-bold text-[#0A2E6D] tracking-tight">
-              Frequently Asked
-              <br />
-              Questions
+              {t("FAQ.title")}
             </h2>
           </div>
           <FaqAccordion
-            data={faqData}
-            timestamp=""
+            data={[
+              { id: 1, question: t("FAQ.q1"), answer: t("FAQ.a1") },
+              { id: 2, question: t("FAQ.q2"), answer: t("FAQ.a2") },
+              { id: 3, question: t("FAQ.q3"), answer: t("FAQ.a3") },
+              { id: 4, question: t("FAQ.q4"), answer: t("FAQ.a4") },
+              { id: 5, question: t("FAQ.q5"), answer: t("FAQ.a5") },
+            ]}
           />
         </div>
       </section>
@@ -466,14 +504,14 @@ export const RevolutionHero = () => {
             className="space-y-8"
           >
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
-              Ready to travel light?
+              {t("CTA.title")}
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
                 href="/book-now"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#0A2E6D] font-medium py-4 px-10 rounded-none hover:bg-[#F6F2EA] transition-all duration-200 text-base active:scale-[0.98]"
               >
-                Book Now
+                {t("CTA.button")}
               </Link>
             </div>
           </motion.div>
@@ -482,7 +520,7 @@ export const RevolutionHero = () => {
 
       <Footer4Col />
     </div>
-  )
-}
+  );
+};
 
-export default RevolutionHero
+export default RevolutionHero;

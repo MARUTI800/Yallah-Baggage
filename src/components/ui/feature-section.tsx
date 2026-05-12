@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
-import Image from "next/image"
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface Feature {
-  step: string
-  title?: string
-  content: string
-  image: string
+  step: string;
+  title?: string;
+  content: string;
+  image: string;
 }
 
 interface FeatureStepsProps {
-  features: Feature[]
-  className?: string
-  title?: string
-  autoPlayInterval?: number
+  features: Feature[];
+  className?: string;
+  title?: string;
+  autoPlayInterval?: number;
 }
 
 export function FeatureSteps({
@@ -25,21 +25,21 @@ export function FeatureSteps({
   title = "How to get Started",
   autoPlayInterval = 3000,
 }: FeatureStepsProps) {
-  const [currentFeature, setCurrentFeature] = useState(0)
-  const [progress, setProgress] = useState(0)
+  const [currentFeature, setCurrentFeature] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       if (progress < 100) {
-        setProgress((prev) => prev + 100 / (autoPlayInterval / 100))
+        setProgress((prev) => prev + 100 / (autoPlayInterval / 100));
       } else {
-        setCurrentFeature((prev) => (prev + 1) % features.length)
-        setProgress(0)
+        setCurrentFeature((prev) => (prev + 1) % features.length);
+        setProgress(0);
       }
-    }, 100)
+    }, 100);
 
-    return () => clearInterval(timer)
-  }, [progress, features.length, autoPlayInterval])
+    return () => clearInterval(timer);
+  }, [progress, features.length, autoPlayInterval]);
 
   return (
     <div className={cn("py-16 md:py-24 bg-[#000000]", className)}>
@@ -96,7 +96,7 @@ export function FeatureSteps({
 
           <div
             className={cn(
-              "w-full order-1 md:order-2 relative h-[250px] sm:h-[350px] md:h-[450px] lg:h-[550px] overflow-hidden rounded-2xl shadow-2xl border border-white/10"
+              "w-full order-1 md:order-2 relative h-[250px] sm:h-[350px] md:h-[450px] lg:h-[550px] overflow-hidden rounded-2xl shadow-2xl border border-white/10",
             )}
           >
             <AnimatePresence mode="wait">
@@ -116,6 +116,7 @@ export function FeatureSteps({
                         alt={feature.step}
                         fill
                         className="w-full h-full object-cover"
+                        priority={index === 0}
                       />
                       <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
                     </motion.div>
@@ -126,5 +127,5 @@ export function FeatureSteps({
         </div>
       </div>
     </div>
-  )
+  );
 }

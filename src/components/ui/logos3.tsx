@@ -1,13 +1,23 @@
 "use client";
 
 import AutoScroll from "embla-carousel-auto-scroll";
-import { Zap, HeartHandshake, MapPin, BadgeDollarSign, ShieldCheck, Clock8, Truck, LocateFixed } from "lucide-react";
+import {
+  Zap,
+  HeartHandshake,
+  MapPin,
+  BadgeDollarSign,
+  ShieldCheck,
+  Clock8,
+  Truck,
+  LocateFixed,
+} from "lucide-react";
 
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { useTranslations } from "next-intl";
 
 interface Term {
   id: string;
@@ -20,51 +30,53 @@ interface TermsCarouselProps {
   terms?: Term[];
 }
 
-const Logos3 = ({
-  heading = "",
-  terms = [
+const Logos3 = ({ heading = "", terms }: TermsCarouselProps) => {
+  const t = useTranslations("Logos");
+
+  const defaultTerms = [
     {
       id: "term-1",
-      label: "Fast Delivery",
+      label: t("fastDelivery"),
       icon: <Zap className="w-5 h-5 text-[#1E5BD7]" />,
     },
     {
       id: "term-2",
-      label: "Repeat Friendly",
+      label: t("repeatFriendly"),
       icon: <HeartHandshake className="w-5 h-5 text-[#0A2E6D]" />,
     },
     {
       id: "term-3",
-      label: "Dubai Coverage",
+      label: t("dubaiCoverage"),
       icon: <MapPin className="w-5 h-5 text-[#1E5BD7]" />,
     },
     {
       id: "term-4",
-      label: "Transparent Pricing",
+      label: t("transparentPricing"),
       icon: <BadgeDollarSign className="w-5 h-5 text-[#0A2E6D]" />,
     },
     {
       id: "term-5",
-      label: "Secure Handling",
+      label: t("secureHandling"),
       icon: <ShieldCheck className="w-5 h-5 text-[#1E5BD7]" />,
     },
     {
       id: "term-6",
-      label: "24/7 Support",
+      label: t("support247"),
       icon: <Clock8 className="w-5 h-5 text-[#0A2E6D]" />,
     },
     {
       id: "term-7",
-      label: "Door-to-Door",
+      label: t("doorToDoor"),
       icon: <Truck className="w-5 h-5 text-[#1E5BD7]" />,
     },
     {
       id: "term-8",
-      label: "Real-time Tracking",
+      label: t("realTimeTracking"),
       icon: <LocateFixed className="w-5 h-5 text-[#0A2E6D]" />,
     },
-  ],
-}: TermsCarouselProps) => {
+  ];
+
+  const displayTerms = terms || defaultTerms;
   return (
     <section className="py-5 w-full">
       <div className="container flex flex-col items-center text-center">
@@ -82,7 +94,7 @@ const Logos3 = ({
             className="w-full"
           >
             <CarouselContent className="ml-0 flex items-center">
-              {terms.map((term) => (
+              {displayTerms.map((term) => (
                 <CarouselItem
                   key={term.id}
                   className="flex basis-auto justify-center pl-6 sm:pl-10 lg:pl-14"

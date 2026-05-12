@@ -3,23 +3,156 @@
 import React from "react";
 import { LogoCarousel } from "@/components/ui/logo-carousel";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface IconProps {
   className?: string;
 }
 
-const AtlantisIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-[0.15em] md:tracking-[0.2em] uppercase">Atlantis</span></div>;
-const BurjAlArabIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-wider md:tracking-widest uppercase">Burj Al Arab</span></div>;
-const JumeirahIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80", props.className)}><span className="text-xl md:text-2xl tracking-[0.1em] md:tracking-[0.15em] uppercase">Jumeirah</span></div>;
-const RitzCarltonIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-[0.05em] md:tracking-[0.1em] font-bold uppercase text-center">The Ritz-Carlton</span></div>;
-const KempinskiIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-2xl md:text-3xl italic tracking-tight md:tracking-wide">Kempinski</span></div>;
-const WaldorfIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-[0.1em] md:tracking-[0.15em] uppercase text-center">Waldorf Astoria</span></div>;
-const ArmaniIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl md:text-2xl tracking-[0.2em] md:tracking-[0.3em] uppercase">Armani</span></div>;
-const AddressIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-wider md:tracking-widest uppercase">The Address</span></div>;
-const BulgariIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl md:text-2xl tracking-[0.25em] md:tracking-[0.35em] uppercase">Bvlgari</span></div>;
-const OneAndOnlyIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-lg md:text-xl tracking-[0.1em] md:tracking-[0.15em] uppercase">One&Only</span></div>;
-const StRegisIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-xl md:text-2xl tracking-wider md:tracking-widest uppercase">St. Regis</span></div>;
-const MandarinIcon = (props: IconProps) => <div className={cn("flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80", props.className)}><span className="text-base md:text-[1.1rem] tracking-[0.15em] md:tracking-[0.2em] uppercase text-center leading-tight">Mandarin Oriental</span></div>;
+const AtlantisIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-[0.15em] md:tracking-[0.2em] uppercase">
+      Atlantis
+    </span>
+  </div>
+);
+const BurjAlArabIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-wider md:tracking-widest uppercase">
+      Burj Al Arab
+    </span>
+  </div>
+);
+const JumeirahIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-xl md:text-2xl tracking-[0.1em] md:tracking-[0.15em] uppercase">
+      Jumeirah
+    </span>
+  </div>
+);
+const RitzCarltonIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-[0.05em] md:tracking-[0.1em] font-bold uppercase text-center">
+      The Ritz-Carlton
+    </span>
+  </div>
+);
+const KempinskiIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-2xl md:text-3xl italic tracking-tight md:tracking-wide">
+      Kempinski
+    </span>
+  </div>
+);
+const WaldorfIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-[0.1em] md:tracking-[0.15em] uppercase text-center">
+      Waldorf Astoria
+    </span>
+  </div>
+);
+const ArmaniIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-xl md:text-2xl tracking-[0.2em] md:tracking-[0.3em] uppercase">
+      Armani
+    </span>
+  </div>
+);
+const AddressIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-sans font-light text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-wider md:tracking-widest uppercase">
+      The Address
+    </span>
+  </div>
+);
+const BulgariIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-xl md:text-2xl tracking-[0.25em] md:tracking-[0.35em] uppercase">
+      Bvlgari
+    </span>
+  </div>
+);
+const OneAndOnlyIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-lg md:text-xl tracking-[0.1em] md:tracking-[0.15em] uppercase">
+      One&Only
+    </span>
+  </div>
+);
+const StRegisIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-xl md:text-2xl tracking-wider md:tracking-widest uppercase">
+      St. Regis
+    </span>
+  </div>
+);
+const MandarinIcon = (props: IconProps) => (
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center font-serif text-[#0A2E6D]/80",
+      props.className,
+    )}
+  >
+    <span className="text-base md:text-[1.1rem] tracking-[0.15em] md:tracking-[0.2em] uppercase text-center leading-tight">
+      Mandarin Oriental
+    </span>
+  </div>
+);
 
 const allLogos = [
   { name: "Atlantis", id: 1, img: AtlantisIcon },
@@ -37,13 +170,16 @@ const allLogos = [
 ];
 
 export function HotelLogoCarousel() {
+  const t = useTranslations("HotelLogos");
   return (
     <div className="w-full bg-white space-y-6 py-16 md:py-20 border-t border-[#E5E5E5] flex flex-col items-center">
       <div className="mx-auto flex w-full max-w-screen-xl flex-col items-center space-y-4 px-4">
         <div className="text-center flex flex-col items-center gap-2">
-          <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-1">Our Partners</p>
+          <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-1">
+            {t("tag")}
+          </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0A2E6D] tracking-tight leading-tight">
-            Trusted by the UAE&apos;s Best Hotels
+            {t("title")}
           </h2>
         </div>
         <div className="w-full max-w-5xl px-4 mt-6">

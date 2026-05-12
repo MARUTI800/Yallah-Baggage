@@ -1,36 +1,55 @@
-import { NextResponse } from "next/server"
-import Stripe from "stripe"
-import { headers } from "next/headers"
-import { getSupabaseServer } from "@/lib/supabase/server"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { headers } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
-  const body = await req.text()
-  const signature = (await headers()).get("Stripe-Signature") as string
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Stripe secret key not configured" },
+      { status: 500 },
+    );
+  }
 
-  let event: Stripe.Event
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: "Stripe webhook secret not configured" },
+      { status: 500 },
+    );
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+  const body = await req.text();
+  const signature = (await headers()).get("Stripe-Signature") as string;
+
+  let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Webhook signature verification failed.", error.message)
-      return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 })
+      return NextResponse.json(
+        { error: `Webhook Error: ${error.message}` },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: "Webhook Error: Unknown error" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Webhook Error: Unknown error" },
+      { status: 400 },
+    );
   }
 
   if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object as Stripe.PaymentIntent
-    const bookingId = paymentIntent.metadata.bookingId
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    const bookingId = paymentIntent.metadata.bookingId;
 
     if (bookingId) {
-      const supabase = getSupabaseServer()
+      const supabase = getSupabaseServer();
 
       // Only update if still pending — the confirm-payment API may have already
       // set it to "confirmed". This webhook acts as a safety net / backup.
@@ -38,34 +57,43 @@ export async function POST(req: Request) {
         .from("bookings")
         .select("status")
         .eq("id", bookingId)
-        .single()
+        .single();
 
       if (booking && booking.status === "pending_payment") {
+        // Generate tracking code as a backup if it hasn't been done yet
+        const { count } = await supabase
+          .from("bookings")
+          .select("*", { count: "exact", head: true });
+
+        const nextId = (count || 0) + 1;
+        const trackingCode = `YB-${String(nextId).padStart(3, "0")}`;
+
         const { error } = await supabase
           .from("bookings")
           .update({
             status: "confirmed",
             paid_at: new Date().toISOString(),
             payment_reference: paymentIntent.id,
+            tracking_code: trackingCode,
           })
-          .eq("id", bookingId)
+          .eq("id", bookingId);
 
         if (error) {
-          console.error("Failed to update booking status in DB:", error)
+          // Silently fail - webhook is a backup mechanism
         }
       } else if (booking && booking.status === "confirmed") {
         // Already confirmed by the client-side call; just store the Stripe reference
         const { error } = await supabase
           .from("bookings")
           .update({ payment_reference: paymentIntent.id })
-          .eq("id", bookingId)
+          .eq("id", bookingId);
 
         if (error) {
-          console.error("Failed to store Stripe payment reference:", error)
+          // Silently fail - webhook is a backup mechanism
         }
       }
     }
   }
 
-  return NextResponse.json({ received: true })
+  return NextResponse.json({ received: true });
 }

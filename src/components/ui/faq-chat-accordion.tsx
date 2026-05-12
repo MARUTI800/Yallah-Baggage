@@ -34,7 +34,9 @@ export function FaqAccordion({
   return (
     <div className={cn("", className)}>
       {timestamp && (
-        <div className="mb-6 text-sm font-medium text-[#8B7280] text-center">{timestamp}</div>
+        <div className="mb-6 text-sm font-medium text-[#8B7280] text-center">
+          {timestamp}
+        </div>
       )}
 
       <Accordion.Root
@@ -45,9 +47,9 @@ export function FaqAccordion({
         className="w-full space-y-2"
       >
         {data.map((item) => (
-          <Accordion.Item 
-            value={item.id.toString()} 
-            key={item.id} 
+          <Accordion.Item
+            value={item.id.toString()}
+            key={item.id}
             className="w-full border-b border-[#E5E5E5]"
           >
             <Accordion.Header className="w-full flex">
@@ -55,19 +57,23 @@ export function FaqAccordion({
                 <div
                   className={cn(
                     "relative flex-1 flex items-center py-5 transition-all duration-200 text-left",
-                    openItem === item.id.toString() 
-                      ? "text-[#0A2E6D]" 
+                    openItem === item.id.toString()
+                      ? "text-[#0A2E6D]"
                       : "text-[#0A2E6D] hover:text-[#1E5BD7]",
-                    questionClassName
+                    questionClassName,
                   )}
                 >
-                  <span className="font-semibold text-lg md:text-xl pr-4">{item.question}</span>
+                  <span className="font-semibold text-lg md:text-xl pr-4">
+                    {item.question}
+                  </span>
                 </div>
 
-                <div 
+                <div
                   className={cn(
                     "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
-                    openItem === item.id.toString() ? "bg-[#F6F2EA]" : "bg-transparent"
+                    openItem === item.id.toString()
+                      ? "bg-[#F6F2EA]"
+                      : "bg-transparent",
                   )}
                 >
                   {openItem === item.id.toString() ? (
@@ -93,7 +99,7 @@ export function FaqAccordion({
                   <div
                     className={cn(
                       "text-[#8B7280] text-base leading-relaxed max-w-3xl",
-                      answerClassName
+                      answerClassName,
                     )}
                   >
                     {item.answer}

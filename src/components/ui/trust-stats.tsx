@@ -9,36 +9,36 @@ const stats = [
     value: "24/7",
     label: "Customer Support",
     iconColor: "text-blue-500",
-    bg: "bg-blue-500/10"
+    bg: "bg-blue-500/10",
   },
   {
     icon: Briefcase,
     value: "2.5k+",
     label: "Bags Handled",
     iconColor: "text-orange-500",
-    bg: "bg-orange-500/10"
+    bg: "bg-orange-500/10",
   },
   {
     icon: Clock,
     value: "99.98%",
     label: "On-Time Delivery",
     iconColor: "text-green-500",
-    bg: "bg-green-500/10"
+    bg: "bg-green-500/10",
   },
   {
     icon: Timer,
     value: "9min",
     label: "Average Pickup Time",
     iconColor: "text-emerald-500",
-    bg: "bg-emerald-500/10"
+    bg: "bg-emerald-500/10",
   },
   {
     icon: ShieldCheck,
     value: "$5K",
     label: "Protection up-to*/bag",
     iconColor: "text-yellow-500",
-    bg: "bg-yellow-500/10"
-  }
+    bg: "bg-yellow-500/10",
+  },
 ];
 
 export function TrustStats() {
@@ -65,19 +65,19 @@ export function TrustStats() {
             const Icon = stat.icon;
             const isLastOdd = i === stats.length - 1 && stats.length % 2 !== 0;
             return (
-              <div 
+              <div
                 key={i}
-                className={`bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex flex-col items-center justify-center text-center hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 group ${isLastOdd ? 'col-span-2 md:col-span-1 lg:col-span-1' : ''}`}
+                className={`bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex flex-col items-center justify-center text-center hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 group ${isLastOdd ? "col-span-2 md:col-span-1 lg:col-span-1" : ""}`}
               >
-                <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl ${stat.bg} ${stat.iconColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-white/50 backdrop-blur-md`}>
+                <div
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl ${stat.bg} ${stat.iconColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-white/50 backdrop-blur-md`}
+                >
                   <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
                 </div>
                 <h3 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2 tracking-tight">
                   {stat.value}
                 </h3>
-                <p className="text-sm font-bold text-gray-500">
-                  {stat.label}
-                </p>
+                <p className="text-sm font-bold text-gray-500">{stat.label}</p>
               </div>
             );
           })}

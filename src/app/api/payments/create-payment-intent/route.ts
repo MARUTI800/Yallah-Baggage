@@ -1,31 +1,47 @@
-import { NextResponse } from "next/server"
-import Stripe from "stripe"
-import { getSupabaseServer } from "@/lib/supabase/server"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { getSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Stripe secret key not configured" },
+      { status: 500 },
+    );
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
   try {
-    const { bookingId } = await req.json()
+    const { bookingId } = await req.json();
 
     if (!bookingId) {
-      return NextResponse.json({ error: "Booking ID is required" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Booking ID is required" },
+        { status: 400 },
+      );
     }
 
-    const supabase = getSupabaseServer()
+    const supabase = getSupabaseServer();
     const { data: booking, error: dbError } = await supabase
       .from("bookings")
       .select("*")
       .eq("id", bookingId)
-      .single()
+      .single();
 
     if (dbError || !booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 })
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Default pricing logic: 40 AED per bag. Change this as needed!
-    const PRICE_PER_BAG = 40
-    const amount = booking.number_of_bags * PRICE_PER_BAG * 100 // Convert to fils/cents
+    // Use the actual total price from the booking (calculated by frontend)
+    const amount = (booking.total_price || 0) * 100; // Convert to fils/cents
+
+    if (amount <= 0) {
+      return NextResponse.json(
+        { error: "Invalid booking amount" },
+        { status: 400 },
+      );
+    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -33,13 +49,15 @@ export async function POST(req: Request) {
       metadata: {
         bookingId: booking.id,
       },
-    })
+    });
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
-    })
-  } catch (error) {
-    console.error("Stripe error:", error)
-    return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 })
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to create payment intent" },
+      { status: 500 },
+    );
   }
 }
