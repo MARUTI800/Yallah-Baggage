@@ -13,18 +13,15 @@ const intlMiddleware = createMiddleware({
   localePrefix: "always",
 });
 
-// Next.js 16 recommends a named export 'proxy'
 export function proxy(request: NextRequest) {
   return intlMiddleware(request);
 }
 
 export const config = {
-  // Match all request paths except for the ones starting with:
-  // - api (API routes)
-  // - _next/static (static files)
-  // - _next/image (image optimization files)
-  // - favicon.ico, icon.png, sitemap.xml, robots.txt (metadata files)
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.png|sitemap.xml|robots.txt).*)",
+    // Match all pathnames except for
+    // - … if they start with `/api`, `/_next` or `/_vercel`
+    // - … the ones containing a dot (e.g. `favicon.ico`, `Logo_primary.png`)
+    "/((?!api|_next|_vercel|.*\\..*).*)",
   ],
 };
