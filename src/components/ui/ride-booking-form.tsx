@@ -830,8 +830,8 @@ export const RideBookingForm = React.forwardRef<
 
           {/* Top Gradient Bar for custom UI (Google UI is cropped out via negative top) */}
           <div 
-            className="absolute top-0 left-0 right-0 h-[170px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-8"
-            style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.95) 0%, rgba(10, 46, 109, 0.8) 40%, transparent 100%)' }}
+            className="absolute top-0 left-0 right-0 h-[200px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-10"
+            style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.98) 0%, rgba(10, 46, 109, 0.85) 50%, transparent 100%)' }}
           >
             {pickupSelected && 
              dropoffSelected && 
