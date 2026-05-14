@@ -62,13 +62,13 @@ export default function BookNowPage() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   const mapSrc = useMemo(() => {
-    if (routeOrigin && 
-        routeDest && 
-        apiKey && 
-        !routeOrigin.includes('[object Object]') && 
-        !routeDest.includes('[object Object]') &&
-        routeOrigin !== 'null' &&
-        routeDest !== 'null') {
+    if (routeOrigin &&
+      routeDest &&
+      apiKey &&
+      !routeOrigin.includes('[object Object]') &&
+      !routeDest.includes('[object Object]') &&
+      routeOrigin !== 'null' &&
+      routeDest !== 'null') {
       // Google Maps Embed API — directions mode: shows 2 markers + route polyline
       return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(routeOrigin)}&destination=${encodeURIComponent(routeDest)}&mode=driving`;
     }
@@ -137,41 +137,41 @@ export default function BookNowPage() {
           />
 
           {/* Ultra-Clean Transparent Route Overview */}
-          {routeOrigin && 
-           routeDest && 
-           !routeOrigin.includes('[object Object]') && 
-           !routeDest.includes('[object Object]') && 
-           routeOrigin !== 'null' && 
-           routeDest !== 'null' && (
-            <div className="absolute top-6 left-6 z-30 pointer-events-none max-w-[320px]">
-              <div className="bg-[#0A2E6D]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-xl relative overflow-hidden">
-                <div className="flex flex-col gap-3 relative z-10">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-emerald-400 text-[9px] font-bold uppercase tracking-wider">Optimized Route</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
-                      <span className="text-white text-[13px] font-medium truncate">
-                        {decodeURIComponent(routeOrigin)}
-                      </span>
+          {routeOrigin &&
+            routeDest &&
+            !routeOrigin.includes('[object Object]') &&
+            !routeDest.includes('[object Object]') &&
+            routeOrigin !== 'null' &&
+            routeDest !== 'null' && (
+              <div className="absolute top-6 left-6 z-30 pointer-events-none max-w-[320px]">
+                <div className="bg-[#0A2E6D]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-xl relative overflow-hidden">
+                  <div className="flex flex-col gap-3 relative z-10">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-emerald-400 text-[9px] font-bold uppercase tracking-wider">Optimized Route</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
-                      <span className="text-white text-[13px] font-medium truncate">
-                        {decodeURIComponent(routeDest)}
-                      </span>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
+                        <span className="text-white text-[13px] font-medium truncate">
+                          {decodeURIComponent(routeOrigin)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
+                        <span className="text-white text-[13px] font-medium truncate">
+                          {decodeURIComponent(routeDest)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Gradient overlay — fades out when route is showing */}
           <div

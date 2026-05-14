@@ -376,7 +376,7 @@ export const RideBookingForm = React.forwardRef<
     () => deliveryDate || (hasMounted ? new Date() : null),
     [deliveryDate, hasMounted],
   );
- 
+
   const pickupDateTime = React.useMemo(() => {
     if (!safePickupDate) return new Date();
     const match = pickupTime.match(/(\d+):(\d+)\s(AM|PM)/);
@@ -791,11 +791,11 @@ export const RideBookingForm = React.forwardRef<
               pickupSelected && dropoffSelected
                 ? `${pickupSelected.description}-${dropoffSelected.description}`
                 : activeMapPreview
-                ? `${activeMapPreview.lat},${activeMapPreview.lon}`
-                : "dubai-default"
+                  ? `${activeMapPreview.lat},${activeMapPreview.lon}`
+                  : "dubai-default"
             }
             className="absolute inset-0 w-full h-full"
-            style={{ 
+            style={{
               border: 0,
               top: "-130px",
               left: "-10px",
@@ -806,19 +806,19 @@ export const RideBookingForm = React.forwardRef<
             title="Google Maps - Location Preview"
             src={(() => {
               const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-              if (pickupSelected && 
-                  dropoffSelected && 
-                  pickupSelected.description && 
-                  dropoffSelected.description && 
-                  apiKey && 
-                  !pickupSelected.description.includes('[object Object]') &&
-                  !dropoffSelected.description.includes('[object Object]')) {
+              if (pickupSelected &&
+                dropoffSelected &&
+                pickupSelected.description &&
+                dropoffSelected.description &&
+                apiKey &&
+                !pickupSelected.description.includes('[object Object]') &&
+                !dropoffSelected.description.includes('[object Object]')) {
                 return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(pickupSelected.description)}&destination=${encodeURIComponent(dropoffSelected.description)}&mode=driving`;
               }
-              if (activeMapPreview && 
-                  activeMapPreview.display_name && 
-                  apiKey && 
-                  !activeMapPreview.display_name.includes('[object Object]')) {
+              if (activeMapPreview &&
+                activeMapPreview.display_name &&
+                apiKey &&
+                !activeMapPreview.display_name.includes('[object Object]')) {
                 return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(activeMapPreview.display_name)}&zoom=15`;
               }
               if (apiKey) {
@@ -829,15 +829,15 @@ export const RideBookingForm = React.forwardRef<
           />
 
           {/* Top Gradient Bar for custom UI (Google UI is cropped out via negative top) */}
-          <div 
+          <div
             className="absolute top-0 left-0 right-0 h-[140px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-6"
             style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.9) 0%, rgba(10, 46, 109, 0.6) 50%, transparent 100%)' }}
           >
-            {pickupSelected && 
-             dropoffSelected && 
-             pickupSelected.description && 
-             dropoffSelected.description && 
-             !pickupSelected.description.includes('[object Object]') ? (
+            {pickupSelected &&
+              dropoffSelected &&
+              pickupSelected.description &&
+              dropoffSelected.description &&
+              !pickupSelected.description.includes('[object Object]') ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 bg-emerald-500/20 self-start px-2 py-0.5 rounded-full border border-emerald-500/30 mb-1">
                   <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />

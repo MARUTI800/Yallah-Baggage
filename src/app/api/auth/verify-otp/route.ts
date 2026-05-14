@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const { data: sessionData, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: "signup",
+      type: "email",
     });
 
     if (error) {
