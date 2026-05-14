@@ -13,15 +13,16 @@ export default function PartnershipsPage() {
   return (
     <main className="relative w-full min-h-screen flex flex-col font-sans overflow-x-hidden bg-white">
       {/* Header */}
-      <header className="fixed top-0 inset-x-0 w-full z-[100] bg-white border-b border-[#E5E5E5] h-[64px] flex items-center px-6 lg:px-10">
+      <header className="absolute top-0 inset-x-0 w-full z-[100] bg-white h-[80px] lg:h-[100px] flex items-center px-6 lg:px-10">
         <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/Logo_primary.png"
               alt="Yallah Baggage"
-              width={150}
-              height={60}
-              style={{ height: "60px", width: "auto" }}
+              width={180}
+              height={70}
+              priority
+              className="h-[70px] lg:h-[100px] w-auto"
             />
           </Link>
           <Link
@@ -35,7 +36,7 @@ export default function PartnershipsPage() {
       </header>
 
       {/* Main Inquiry Section */}
-      <div className="pt-[64px]">
+      <div className="pt-[80px] lg:pt-[100px]">
         <PartnershipInquiry />
       </div>
 

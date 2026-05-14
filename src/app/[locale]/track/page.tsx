@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Link } from "@/navigation";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import Footer4Col from "@/components/ui/footer-column";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import {
@@ -147,16 +148,16 @@ function TrackingPageContent() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.06)]">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-white">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[80px] lg:h-[100px] flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/Logo_primary.png"
               alt="Yallah Baggage"
-              width={150}
-              height={60}
+              width={180}
+              height={70}
               priority
-              className="h-[60px] w-auto"
+              className="h-[70px] lg:h-[100px] w-auto"
             />
           </Link>
           <div className="flex items-center gap-3">
@@ -170,7 +171,7 @@ function TrackingPageContent() {
         </div>
       </header>
 
-      <main className="flex-1 pt-[72px]">
+      <main className="flex-1 pt-[80px] lg:pt-[100px]">
         <div className="max-w-lg mx-auto px-6 py-16">
           <AnimatePresence mode="wait">
             {/* ── STEP: Form ── */}
@@ -502,12 +503,7 @@ function TrackingPageContent() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#F6F2EA] py-8 text-center">
-        <p className="text-xs text-[#8B7280]">
-          {t("Track.footerCopyright")}
-        </p>
-      </footer>
+      <Footer4Col />
     </div>
   );
 }

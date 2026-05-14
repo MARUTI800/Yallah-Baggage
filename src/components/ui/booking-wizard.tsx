@@ -40,6 +40,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Luggage,
   Bike,
   CreditCard,
@@ -71,6 +72,10 @@ type BookingDraft = {
   isSurge?: boolean;
   paymentMethod?: "stripe" | "cod";
   distanceKm?: number;
+  durationMins?: number;
+  isInternational?: boolean;
+  originCoords?: { lat: number; lng: number };
+  destCoords?: { lat: number; lng: number };
 };
 
 interface GooglePrediction {
@@ -108,55 +113,7 @@ function isValidEmail(email: string) {
 }
 
 // ── Pricing & Distance Utilities ──────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371; // Radius of the earth in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
-}
-
-function calculatePrice(draft: BookingDraft) {
-  // Distance calculation
-  const distanceKm = draft.distanceKm || 13;
-
-  const start = new Date(draft.pickupDate);
-  const end = new Date(draft.deliveryDate);
-  const diffTime = Math.max(0, end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-
-  let basePrice = 40 + distanceKm * 2; // AED 40 base + 2 AED/km
-
-  // Bag surcharges (Matching UI labels: 29 and 67)
-  basePrice += draft.regularBags * 29 * diffDays;
-  basePrice += draft.oddSizedItems * 67 * diffDays;
-
-  // Peak Hours check
-  const isPeak = draft.isSurge ?? false;
-  if (isPeak) {
-    basePrice *= 1.1; // 10% high demand surcharge
-  }
-
-  return {
-    distanceKm,
-    basePrice: Math.round(basePrice),
-    total: Math.round(basePrice),
-    isPeak,
-    diffDays,
-  };
-}
+import { calculateBookingPrice, REGULAR_BAG_PRICE, ODD_ITEM_PRICE } from "@/lib/pricing";
 
 // ── Location Autocomplete ──────────────────────────────────────────
 function LocationInput({
@@ -827,9 +784,11 @@ function StripePaymentForm({
 // ── Main Wizard ───────────────────────────────────────────────────
 export function BookingWizard({
   onLocationPin,
+  onRouteUpdate,
   initialDraft = {},
 }: {
   onLocationPin?: (lat: string, lon: string, name: string) => void;
+  onRouteUpdate?: (originStr: string | null, destStr: string | null) => void;
   initialDraft?: Partial<BookingDraft>;
 }) {
   const t = useTranslations("BookingWizard");
@@ -856,37 +815,64 @@ export function BookingWizard({
   const [trackingOtp, setTrackingOtp] = useState<string | null>(null);
   const [isConfirmingOrder, setIsConfirmingOrder] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [distanceLoading, setDistanceLoading] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  // Fetch real distance from API when both locations are set
+  // Fetch real distance from API when both locations are confirmed
   useEffect(() => {
+    // Only fetch when both locations are fully set (real addresses, not partial typing)
+    if (draft.pickupLocation.length < 5 || draft.dropoffLocation.length < 5) {
+      return;
+    }
+
+    // Reset distance while we fetch the new one
+    setDistanceLoading(true);
+    setDraft((d) => ({ ...d, distanceKm: undefined, durationMins: undefined, isInternational: undefined, originCoords: undefined, destCoords: undefined }));
+
     const fetchDistance = async () => {
-      if (draft.pickupLocation.length > 5 && draft.dropoffLocation.length > 5) {
-        try {
-          const res = await fetch(
-            `/api/places/distance?origin=${encodeURIComponent(draft.pickupLocation)}&destination=${encodeURIComponent(draft.dropoffLocation)}`,
-          );
-          const data = await res.json();
-          if (data.distanceKm) {
-            setDraft((d) => ({ ...d, distanceKm: data.distanceKm }));
-          }
-        } catch (err) {
-          console.error("Failed to fetch distance:", err);
+      try {
+        const res = await fetch(
+          `/api/places/distance?origin=${encodeURIComponent(draft.pickupLocation)}&destination=${encodeURIComponent(draft.dropoffLocation)}`,
+        );
+        const data = await res.json();
+        if (data.distanceKm && data.distanceKm > 0) {
+          setDraft((d) => ({ 
+            ...d, 
+            distanceKm: data.distanceKm,
+            durationMins: data.durationMins || Math.round(data.distanceKm * 1.5),
+            isInternational: data.isInternational || false,
+            originCoords: data.originCoords,
+            destCoords: data.destCoords,
+          }));
+          // Push route strings to parent for map overview
+          onRouteUpdate?.(draft.pickupLocation || null, draft.dropoffLocation || null);
         }
+      } catch (err) {
+        console.error("Failed to fetch distance:", err);
+      } finally {
+        setDistanceLoading(false);
       }
     };
 
-    const tid = setTimeout(fetchDistance, 1000); // Debounce
-    return () => clearTimeout(tid);
+    const tid = setTimeout(fetchDistance, 500);
+    return () => {
+      clearTimeout(tid);
+      setDistanceLoading(false);
+    };
   }, [draft.pickupLocation, draft.dropoffLocation]);
 
   const pickupDateTime = useMemo(
     () => getComparableDate(draft.pickupDate, draft.pickupTime),
     [draft.pickupDate, draft.pickupTime],
   );
+
+  const minDeliveryDateTime = useMemo(() => {
+    const requiredBufferMins = draft.durationMins ? draft.durationMins + 30 : 60;
+    return new Date(pickupDateTime.getTime() + requiredBufferMins * 60 * 1000);
+  }, [pickupDateTime, draft.durationMins]);
 
   // Fetch surge status when pickup date/time changes
   useEffect(() => {
@@ -912,8 +898,8 @@ export function BookingWizard({
   useEffect(() => {
     if (!draft.pickupDate || !draft.pickupTime) return;
     const ddt = getComparableDate(draft.deliveryDate, draft.deliveryTime);
-    if (ddt.getTime() <= pickupDateTime.getTime()) {
-      const newDDT = new Date(pickupDateTime.getTime() + 60 * 60 * 1000); // +1 hour
+    if (ddt.getTime() < minDeliveryDateTime.getTime()) {
+      const newDDT = new Date(minDeliveryDateTime.getTime());
 
       const newDateStr = fmtDate(newDDT);
       let h = newDDT.getHours();
@@ -932,7 +918,7 @@ export function BookingWizard({
       }));
     }
   }, [
-    pickupDateTime,
+    minDeliveryDateTime,
     draft.deliveryDate,
     draft.deliveryTime,
     draft.pickupDate,
@@ -1014,7 +1000,7 @@ export function BookingWizard({
         return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:00`;
       };
 
-      const { total } = calculatePrice(draft);
+      const { total } = calculateBookingPrice(draft);
 
       const payload = {
         ...draft,
@@ -1293,7 +1279,7 @@ export function BookingWizard({
                 onTimeChange={(v) =>
                   setDraft((d) => ({ ...d, deliveryTime: v }))
                 }
-                minDateTime={pickupDateTime}
+                minDateTime={minDeliveryDateTime}
               />
             </div>
 
@@ -1477,14 +1463,17 @@ export function BookingWizard({
 
             {/* Child Ages */}
             {draft.children > 0 && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] block pl-1">
+              <div className="space-y-3 mt-4 pt-4 border-t border-[#E5E5E5]/60">
+                <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#8B7280] flex items-center gap-2 pl-1">
                   {t("childAges")}
+                  <span className="text-[#1E5BD7] normal-case tracking-normal font-medium text-xs bg-[#1E5BD7]/10 px-2 py-0.5 rounded-full">
+                    Required
+                  </span>
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {Array.from({ length: draft.children }).map((_, i) => (
                     <div key={i} className="relative group w-full">
-                      <div className="w-full bg-[#F7F5F0] border border-transparent rounded-xl focus-within:border-[#1E5BD7] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(30,91,215,0.08)] transition-all duration-200">
+                      <div className="w-full bg-[#F6F2EA] border border-[#E5E5E5]/50 hover:border-[#1E5BD7]/40 rounded-xl focus-within:border-[#1E5BD7] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(30,91,215,0.08)] transition-all duration-200 flex items-center pr-3">
                         <select
                           value={draft.childrenAges[i] || ""}
                           onChange={(e) =>
@@ -1494,7 +1483,7 @@ export function BookingWizard({
                               return { ...d, childrenAges: newAges };
                             })
                           }
-                          className="w-full px-4 py-3 text-sm font-medium text-[#0A2E6D] bg-transparent focus:outline-none appearance-none"
+                          className="w-full px-4 py-3 text-sm font-medium text-[#0A2E6D] bg-transparent focus:outline-none appearance-none cursor-pointer"
                         >
                           <option value="" disabled>
                             {t("childAge", { number: i + 1 })}
@@ -1513,6 +1502,7 @@ export function BookingWizard({
                             </option>
                           ))}
                         </select>
+                        <ChevronDown className="w-4 h-4 text-[#8B7280] pointer-events-none" />
                       </div>
                     </div>
                   ))}
@@ -1548,7 +1538,7 @@ export function BookingWizard({
                       {t("regularDesc")}
                     </p>
                     <p className="text-xs font-semibold text-[#0A2E6D] mt-1">
-                      29 AED {t("perDay")}
+                      {REGULAR_BAG_PRICE} AED / bag
                     </p>
                   </div>
                 </div>
@@ -1603,7 +1593,7 @@ export function BookingWizard({
                       {t("oddSizedDesc")}
                     </p>
                     <p className="text-xs font-semibold text-[#0A2E6D] mt-1">
-                      67 AED {t("perDay")}
+                      {ODD_ITEM_PRICE} AED / item
                     </p>
                   </div>
                 </div>
@@ -1660,62 +1650,69 @@ export function BookingWizard({
             </div>
 
             {/* Price Quotation */}
+            {(() => { const price = calculateBookingPrice(draft); return (
             <div className="bg-[#F6F2EA]/40 border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
               <h3 className="text-lg font-bold text-[#0A2E6D] tracking-tight">
                 {t("priceQuotation")}
               </h3>
+
+              {/* International badge */}
+              {draft.isInternational && (
+                <div className="flex items-center gap-2 bg-[#1E5BD7]/5 border border-[#1E5BD7]/20 rounded-lg px-3 py-2">
+                  <span className="text-xs font-semibold text-[#1E5BD7] uppercase tracking-wide">🌍 International Shipping</span>
+                </div>
+              )}
+
               <div className="space-y-2">
+                {/* Delivery fee */}
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[#8B7280]">
-                    {t("distanceBase", { distance: ""})?.split("(")[0]}(
-                    {Math.round(calculatePrice(draft).distanceKm)} km)
+                    {distanceLoading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {draft.isInternational ? "International Shipping" : "Delivery Fee"} ({t("calculating")})
+                      </span>
+                    ) : (
+                      <>{draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}</>
+                    )}
                   </span>
                   <span className="font-semibold text-[#0A2E6D]">
-                    AED {Math.round(40 + calculatePrice(draft).distanceKm * 2)}
+                    {distanceLoading ? "..." : `AED ${price.deliveryFee}`}
                   </span>
                 </div>
+
+                {/* Regular bags */}
                 {draft.regularBags > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {t("regular")} Bags ({draft.regularBags} × AED 29
-                      {calculatePrice(draft).diffDays > 1
-                        ? ` × ${calculatePrice(draft).diffDays} ${t("days")}`
-                        : ""}
-                      )
+                      {t("regular")} Bags ({draft.regularBags} × AED {REGULAR_BAG_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      AED{" "}
-                      {draft.regularBags * 29 * calculatePrice(draft).diffDays}
+                      AED {draft.regularBags * REGULAR_BAG_PRICE}
                     </span>
                   </div>
                 )}
+
+                {/* Odd-sized items */}
                 {draft.oddSizedItems > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {t("oddSized")} Items ({draft.oddSizedItems} × AED 67
-                      {calculatePrice(draft).diffDays > 1
-                        ? ` × ${calculatePrice(draft).diffDays} ${t("days")}`
-                        : ""}
-                      )
+                      {t("oddSized")} Items ({draft.oddSizedItems} × AED {ODD_ITEM_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      AED{" "}
-                      {draft.oddSizedItems *
-                        67 *
-                        calculatePrice(draft).diffDays}
+                      AED {draft.oddSizedItems * ODD_ITEM_PRICE}
                     </span>
                   </div>
                 )}
-                {calculatePrice(draft).isPeak && (
+
+                {/* Surge */}
+                {price.isPeak && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-orange-500 font-medium">
                       {t("highDemandSurcharge")}
                     </span>
                     <span className="font-semibold text-orange-600">
-                      AED{" "}
-                      {Math.round(
-                        (calculatePrice(draft).basePrice / 1.1) * 0.1,
-                      )}
+                      AED {Math.round((price.basePrice / 1.1) * 0.1)}
                     </span>
                   </div>
                 )}
@@ -1725,11 +1722,11 @@ export function BookingWizard({
                   {t("totalPrice")}
                 </span>
                 <span className="text-2xl font-bold text-[#0A2E6D]">
-                  AED {calculatePrice(draft).total}
+                  AED {price.total}
                 </span>
               </div>
             </div>
-
+            ); })()}
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => {
@@ -1852,65 +1849,62 @@ export function BookingWizard({
             </div>
 
             {/* Price Quotation */}
+            {(() => { const price = calculateBookingPrice(draft); return (
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
               <h3 className="text-lg font-bold text-[#0A2E6D] tracking-tight">
                 {t("quotation")}
               </h3>
 
+              {/* International badge */}
+              {draft.isInternational && (
+                <div className="flex items-center gap-2 bg-[#1E5BD7]/5 border border-[#1E5BD7]/20 rounded-lg px-3 py-2">
+                  <span className="text-xs font-semibold text-[#1E5BD7] uppercase tracking-wide">🌍 International Shipping · 5-7 business days</span>
+                </div>
+              )}
+
               <div className="space-y-2">
+                {/* Delivery fee */}
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[#8B7280]">
-                    {t("distanceBase", {
-                      distance: Math.round(calculatePrice(draft).distanceKm),
-                    })}
+                    {draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}
                   </span>
                   <span className="font-semibold text-[#0A2E6D]">
-                    AED {Math.round(40 + calculatePrice(draft).distanceKm * 2)}
+                    AED {price.deliveryFee}
                   </span>
                 </div>
 
+                {/* Regular bags */}
                 {draft.regularBags > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {t("regularBagsItem", { count: draft.regularBags })}
-                      {calculatePrice(draft).diffDays > 1
-                        ? ` × ${calculatePrice(draft).diffDays} ${t("days")}`
-                        : ""}
+                      {t("regular")} Bags ({draft.regularBags} × AED {REGULAR_BAG_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      AED{" "}
-                      {draft.regularBags * 29 * calculatePrice(draft).diffDays}
+                      AED {draft.regularBags * REGULAR_BAG_PRICE}
                     </span>
                   </div>
                 )}
 
+                {/* Odd-sized items */}
                 {draft.oddSizedItems > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {t("oddSizedItems", { count: draft.oddSizedItems })}
-                      {calculatePrice(draft).diffDays > 1
-                        ? ` × ${calculatePrice(draft).diffDays} ${t("days")}`
-                        : ""}
+                      {t("oddSized")} Items ({draft.oddSizedItems} × AED {ODD_ITEM_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      AED{" "}
-                      {draft.oddSizedItems *
-                        67 *
-                        calculatePrice(draft).diffDays}
+                      AED {draft.oddSizedItems * ODD_ITEM_PRICE}
                     </span>
                   </div>
                 )}
 
-                {calculatePrice(draft).isPeak && (
+                {/* Surge */}
+                {price.isPeak && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-orange-500 font-medium">
                       {t("highDemandSurcharge")}
                     </span>
                     <span className="font-semibold text-orange-600">
-                      AED{" "}
-                      {Math.round(
-                        (calculatePrice(draft).basePrice / 1.1) * 0.1,
-                      )}
+                      AED {Math.round((price.basePrice / 1.1) * 0.1)}
                     </span>
                   </div>
                 )}
@@ -1921,10 +1915,11 @@ export function BookingWizard({
                   {t("totalPrice")}
                 </span>
                 <span className="text-2xl font-bold text-[#0A2E6D]">
-                  AED {calculatePrice(draft).total}
+                  AED {price.total}
                 </span>
               </div>
             </div>
+            ); })()}
 
             {isConfirmingOrder ? (
               <div className="flex flex-col items-center justify-center h-32 gap-3">
@@ -1942,7 +1937,7 @@ export function BookingWizard({
                   <div>
                     <h4 className="text-lg font-bold text-[#0A2E6D] mb-2">{t("cashOnDelivery")}</h4>
                     <p className="text-sm text-[#8B7280]">
-                      {t("codPayMessage", { amount: calculatePrice(draft).total })}
+                      {t("codPayMessage", { amount: calculateBookingPrice(draft).total })}
                     </p>
                   </div>
                   <button
@@ -2060,7 +2055,7 @@ export function BookingWizard({
                   {t("totalPaid")}
                 </span>
                 <span className="text-[#0A2E6D] font-bold text-sm">
-                  AED {calculatePrice(draft).total}
+                  AED {calculateBookingPrice(draft).total}
                 </span>
               </div>
               {trackingOtp && (
@@ -2130,13 +2125,13 @@ export function BookingWizard({
               </button>
 
               <div className="mb-6 mt-2 text-center">
-                <div className="w-20 h-14 mx-auto mb-4 flex items-center justify-center">
+                <div className="w-32 h-16 mx-auto mb-4 flex items-center justify-center">
                   <Image
                     src="/Logo_primary.png"
                     alt="Logo"
-                    width={120}
-                    height={40}
-                    className="w-auto h-12 object-contain"
+                    width={150}
+                    height={50}
+                    className="w-auto h-16 object-contain"
                   />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#0A2E6D] mb-2">

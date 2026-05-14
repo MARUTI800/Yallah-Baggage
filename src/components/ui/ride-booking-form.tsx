@@ -12,6 +12,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  Navigation2,
 } from "lucide-react";
 import { getDubaiTime } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -136,7 +137,7 @@ function DateTimePicker({
     <div
       className={cn(
         "relative flex flex-col w-full group transition-all duration-200",
-        isOpen ? "z-50" : "z-10",
+        isOpen ? "z-[60]" : "z-10",
       )}
     >
       <div
@@ -152,11 +153,11 @@ function DateTimePicker({
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
             <Calendar className="w-5 h-5 text-[#0A2E6D]" />
           </div>
-          <div className="flex-1 flex flex-col justify-center">
-            <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block cursor-pointer">
+          <div className="flex-1 flex flex-col justify-center min-h-[48px]">
+            <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block cursor-pointer uppercase tracking-wider">
               {label}
             </label>
-            <div className="text-[15px] font-medium text-[#8B7280]">
+            <div className="text-[15px] font-medium text-[#8B7280] leading-tight">
               {formatAppleDate(selectedDate)} {t("at")} {selectedTime}
             </div>
           </div>
@@ -170,7 +171,7 @@ function DateTimePicker({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[calc(100%-32px)] sm:w-[320px] bg-white border border-[#E5E5E5] rounded-2xl shadow-[0_12px_40px_rgba(10,46,109,0.15)] p-4 origin-top z-[100]"
+            className="absolute top-[calc(100%+12px)] left-0 w-full sm:w-[340px] bg-white border border-[#E5E5E5] rounded-2xl shadow-[0_20px_50px_rgba(10,46,109,0.2)] p-5 origin-top z-[100]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3 px-1">
@@ -569,10 +570,10 @@ export const RideBookingForm = React.forwardRef<
       >
         {/* Left Side: Booking Form */}
         <div
-          className="p-8 sm:p-12 relative z-20 flex flex-col h-full justify-center"
+          className="p-8 sm:p-10 relative z-[40] flex flex-col h-full justify-center"
           ref={formRef}
         >
-          <div className="mb-10">
+          <div className="mb-6">
             <h2 className="text-3xl lg:text-[2.5rem] font-bold text-[#0A2E6D] leading-[1.1] tracking-tight mb-2">
               {t("title")}
             </h2>
@@ -585,14 +586,14 @@ export const RideBookingForm = React.forwardRef<
             {/* Block-style Inputs matching App Screen Mockup */}
             <div className="flex flex-col gap-4">
               {/* PICKUP */}
-              <div className="relative flex flex-col w-full z-30 group">
+              <div className="relative flex flex-col w-full z-[40] group">
                 <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-[#0A2E6D]" />
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 transition-all duration-300 group-focus-within:bg-[#1E5BD7] group-focus-within:text-white group-focus-within:shadow-[0_0_15px_rgba(30,91,215,0.4)]">
+                      <MapPin className="w-5 h-5 text-[#0A2E6D] group-focus-within:text-white transition-all duration-300 group-focus-within:scale-110" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block">
+                    <div className="flex-1 flex flex-col justify-center min-h-[48px]">
+                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider">
                         {t("pickupLabel")}
                       </label>
                       <input
@@ -607,7 +608,7 @@ export const RideBookingForm = React.forwardRef<
                         onBlur={() =>
                           setTimeout(() => setPickupFocused(false), 200)
                         }
-                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60"
+                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight"
                         aria-label="Pickup location"
                       />
                     </div>
@@ -629,7 +630,7 @@ export const RideBookingForm = React.forwardRef<
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 4 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_8px_30px_rgba(10,46,109,0.12)] z-[100] py-2"
+                          className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_20px_50px_rgba(10,46,109,0.2)] z-[100] py-2"
                         >
                           {pickupResults.map((loc) => {
                             const mainText =
@@ -667,14 +668,14 @@ export const RideBookingForm = React.forwardRef<
               </div>
 
               {/* DELIVERY */}
-              <div className="relative flex flex-col w-full z-20 group">
+              <div className="relative flex flex-col w-full z-[30] group">
                 <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                      <Briefcase className="w-5 h-5 text-[#0A2E6D]" />
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 transition-all duration-300 group-focus-within:bg-[#1E5BD7] group-focus-within:text-white group-focus-within:shadow-[0_0_15px_rgba(30,91,215,0.4)]">
+                      <Navigation2 className="w-5 h-5 text-[#0A2E6D] group-focus-within:text-white transition-all duration-300 group-focus-within:scale-110" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block">
+                    <div className="flex-1 flex flex-col justify-center min-h-[48px]">
+                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider">
                         {t("deliveryLabel")}
                       </label>
                       <input
@@ -689,7 +690,7 @@ export const RideBookingForm = React.forwardRef<
                         onBlur={() =>
                           setTimeout(() => setDropoffFocused(false), 200)
                         }
-                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60"
+                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight"
                         aria-label="Delivery location"
                       />
                     </div>
@@ -711,7 +712,7 @@ export const RideBookingForm = React.forwardRef<
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 4 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_8px_30px_rgba(10,46,109,0.12)] z-[100] py-2"
+                          className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-[#E5E5E5] rounded-xl shadow-[0_20px_50px_rgba(10,46,109,0.2)] z-[100] py-2"
                         >
                           {dropoffResults.map((loc) => {
                             const mainText =
@@ -772,7 +773,7 @@ export const RideBookingForm = React.forwardRef<
               />
             </div>
 
-            <div className="pt-10">
+            <div className="pt-6">
               <button
                 type="submit"
                 className="w-full flex items-center justify-center px-4 h-14 rounded-full text-[15px] font-bold transition-all bg-[#0A2E6D] text-white hover:bg-[#0A2E6D]/90 active:scale-[0.98] shadow-md duration-200"
@@ -787,23 +788,91 @@ export const RideBookingForm = React.forwardRef<
         <div className="hidden lg:block relative w-full h-full bg-[#F6F2EA] overflow-hidden rounded-r-2xl">
           <iframe
             key={
-              activeMapPreview
+              pickupSelected && dropoffSelected
+                ? `${pickupSelected.description}-${dropoffSelected.description}`
+                : activeMapPreview
                 ? `${activeMapPreview.lat},${activeMapPreview.lon}`
                 : "dubai-default"
             }
             className="absolute inset-0 w-full h-full"
-            style={{ border: 0 }}
+            style={{ 
+              border: 0,
+              top: "-130px",
+              left: "-10px",
+              width: "calc(100% + 20px)",
+              height: "calc(100% + 260px)"
+            }}
             loading="lazy"
             title="Google Maps - Location Preview"
-            src={
-              activeMapPreview
-                ? `https://maps.google.com/maps?q=${activeMapPreview.lat},${activeMapPreview.lon}&t=&z=15&ie=UTF8&iwloc=&output=embed`
-                : `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=12&ie=UTF8&iwloc=&output=embed`
-            }
+            src={(() => {
+              const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+              if (pickupSelected && 
+                  dropoffSelected && 
+                  pickupSelected.description && 
+                  dropoffSelected.description && 
+                  apiKey && 
+                  !pickupSelected.description.includes('[object Object]') &&
+                  !dropoffSelected.description.includes('[object Object]')) {
+                return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(pickupSelected.description)}&destination=${encodeURIComponent(dropoffSelected.description)}&mode=driving`;
+              }
+              if (activeMapPreview && 
+                  activeMapPreview.display_name && 
+                  apiKey && 
+                  !activeMapPreview.display_name.includes('[object Object]')) {
+                return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(activeMapPreview.display_name)}&zoom=15`;
+              }
+              if (apiKey) {
+                return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=Dubai,UAE&zoom=12`;
+              }
+              return `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+            })()}
           />
 
+          {/* Top Gradient Bar for custom UI (Google UI is cropped out via negative top) */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-[170px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-8"
+            style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.95) 0%, rgba(10, 46, 109, 0.8) 40%, transparent 100%)' }}
+          >
+            {pickupSelected && 
+             dropoffSelected && 
+             pickupSelected.description && 
+             dropoffSelected.description && 
+             !pickupSelected.description.includes('[object Object]') ? (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Route Overview</p>
+                <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-4 text-white text-sm font-medium">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                    <span className="truncate max-w-[280px]">{pickupSelected.description}</span>
+                  </div>
+                  <div className="hidden xl:block w-1.5 h-1.5 rounded-full bg-white/20" />
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
+                    <span className="truncate max-w-[280px]">{dropoffSelected.description}</span>
+                  </div>
+                </div>
+              </div>
+            ) : activeMapPreview && activeMapPreview.display_name && !activeMapPreview.display_name.includes('[object Object]') ? (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Location Preview</p>
+                <div className="flex items-center gap-3 text-white text-sm font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
+                  <span className="truncate max-w-[400px]">{activeMapPreview.display_name}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Yallah Baggage</p>
+                <div className="flex items-center gap-3 text-white text-sm font-medium">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#1E5BD7] flex-shrink-0 animate-pulse shadow-[0_0_8px_rgba(30,91,215,0.5)]" />
+                  <span>Select pickup and drop-off to calculate route</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <AnimatePresence>
-            {activeMapPreview && (
+            {activeMapPreview && !(pickupSelected && dropoffSelected) && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -811,9 +880,9 @@ export const RideBookingForm = React.forwardRef<
                 transition={{ duration: 0.3 }}
                 className="absolute bottom-5 inset-x-0 flex justify-center z-20"
               >
-                <div className="bg-white border border-[#E5E5E5] px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg">
+                <div className="bg-white/95 backdrop-blur-md border border-[#E5E5E5] px-4 py-2.5 rounded-full flex items-center gap-2 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
                   <CheckCircle2 className="w-4 h-4 text-[#1E5BD7]" />
-                  <span className="text-[#0A2E6D] text-sm font-semibold">
+                  <span className="text-[#0A2E6D] text-sm font-bold tracking-tight">
                     {activeMapPreview.display_name.split(", ")[0]}
                   </span>
                 </div>
@@ -822,7 +891,7 @@ export const RideBookingForm = React.forwardRef<
           </AnimatePresence>
 
           <AnimatePresence>
-            {!activeMapPreview && (
+            {!activeMapPreview && !(pickupSelected && dropoffSelected) && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

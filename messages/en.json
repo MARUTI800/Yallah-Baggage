@@ -221,6 +221,7 @@
     "customNotes": "Custom Notes (Optional)",
     "customNotesPlaceholder": "Any special instructions for pick-up/drop-off...",
     "priceQuotation": "Price Quotation",
+    "calculating": "Calculating...",
     "backButton": "Back",
     "savingText": "Saving…",
     "reviewPayButton": "Review & Pay",

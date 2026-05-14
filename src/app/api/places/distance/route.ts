@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
 
+// Helper: extract country code from a Geocoding API result
+function extractCountry(
+  result: { address_components?: { short_name: string; types: string[] }[] }
+): string | null {
+  const comp = result.address_components?.find((c: { types: string[] }) =>
+    c.types.includes("country")
+  );
+  return comp?.short_name ?? null;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -21,34 +31,111 @@ export async function GET(req: Request) {
       );
     }
 
-    // Use Distance Matrix API
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
-      origin,
-    )}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
+    // ── Step 1: Geocode both addresses to get coords + country ──
+    const geocode = async (address: string) => {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`,
+      );
+      const data = await res.json();
+      if (data.status !== "OK" || !data.results || data.results.length === 0)
+        return null;
+      const result = data.results[0];
+      return {
+        lat: result.geometry.location.lat as number,
+        lng: result.geometry.location.lng as number,
+        country: extractCountry(result),
+        formatted: result.formatted_address as string,
+      };
+    };
 
-    const res = await fetch(url);
-    const data = await res.json();
+    const [originGeo, destGeo] = await Promise.all([
+      geocode(origin),
+      geocode(destination),
+    ]);
 
-    if (data.status !== "OK") {
+    if (!originGeo || !destGeo) {
       return NextResponse.json(
-        { error: data.error_message || "Distance Matrix API error" },
+        { error: "Could not geocode one or both locations" },
         { status: 400 },
       );
     }
 
-    const element = data.rows[0].elements[0];
-    if (element.status !== "OK") {
-      return NextResponse.json(
-        { error: "Could not calculate distance between these locations" },
-        { status: 400 },
+    const isInternational =
+      originGeo.country !== null &&
+      destGeo.country !== null &&
+      originGeo.country !== destGeo.country;
+
+    // ── Step 2: Try Routes API for precise driving distance ──
+    let distanceKm: number;
+    let durationMins: number;
+
+    const routesRes = await fetch(
+      "https://routes.googleapis.com/directions/v2:computeRoutes",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
+        },
+        body: JSON.stringify({
+          origin: { address: origin },
+          destination: { address: destination },
+          travelMode: "DRIVE",
+        }),
+      },
+    );
+
+    const routesData = await routesRes.json();
+
+    if (
+      !routesData.error &&
+      routesData.routes &&
+      routesData.routes.length > 0
+    ) {
+      // Routes API succeeded
+      const route = routesData.routes[0];
+      distanceKm = (route.distanceMeters || 0) / 1000;
+      const durationSeconds = parseInt(
+        (route.duration || "0s").replace("s", ""),
+        10,
       );
+      durationMins = Math.ceil(durationSeconds / 60);
+    } else {
+      // ── Fallback: Haversine from geocoded coords ──
+      console.warn(
+        "Routes API unavailable, using Haversine approximation.",
+      );
+      const R = 6371;
+      const dLat =
+        (destGeo.lat - originGeo.lat) * (Math.PI / 180);
+      const dLon =
+        (destGeo.lng - originGeo.lng) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(originGeo.lat * (Math.PI / 180)) *
+          Math.cos(destGeo.lat * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const straightLineKm = R * c;
+
+      distanceKm = straightLineKm * 1.3; // driving approximation
+      durationMins = Math.round((distanceKm / 40) * 60);
     }
 
-    // distance.value is in meters
-    const distanceKm = element.distance.value / 1000;
-    const durationText = element.duration.text;
+    const durationText = `${durationMins} mins`;
 
-    return NextResponse.json({ distanceKm, durationText });
+    return NextResponse.json({
+      distanceKm,
+      durationText,
+      durationMins,
+      isInternational,
+      originCountry: originGeo.country,
+      destCountry: destGeo.country,
+      originCoords: { lat: originGeo.lat, lng: originGeo.lng },
+      destCoords: { lat: destGeo.lat, lng: destGeo.lng },
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unexpected error." },

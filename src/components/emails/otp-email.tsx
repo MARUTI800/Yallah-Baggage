@@ -7,91 +7,123 @@ interface OtpEmailProps {
 export const OtpEmail: React.FC<Readonly<OtpEmailProps>> = ({ otpCode }) => (
   <div
     style={{
-      fontFamily: '"Poppins", -apple-system, sans-serif',
+      fontFamily: '"Poppins", "Segoe UI", -apple-system, sans-serif',
       backgroundColor: "#F6F2EA",
-      padding: "40px 20px",
+      padding: "40px 16px",
       color: "#0A2E6D",
-      textAlign: "center",
     }}
   >
     <div
       style={{
-        maxWidth: "500px",
+        maxWidth: "480px",
         margin: "0 auto",
         backgroundColor: "#ffffff",
         borderRadius: "24px",
-        padding: "40px",
-        boxShadow: "0 10px 30px rgba(10, 46, 109, 0.05)",
+        overflow: "hidden",
+        boxShadow: "0 10px 40px rgba(10, 46, 109, 0.08)",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="https://gviboyquykrdbtwxebfi.supabase.co/storage/v1/object/public/brand/Logo_primary.png"
-        alt="Yallah Baggage"
-        style={{ height: "60px", marginBottom: "30px" }}
-      />
-
-      <h1
-        style={{
-          fontSize: "24px",
-          fontWeight: "700",
-          margin: "0 0 10px 0",
-          color: "#0A2E6D",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        Verify Your Order
-      </h1>
-
-      <p
-        style={{
-          fontSize: "16px",
-          color: "#8B7280",
-          margin: "0 0 30px 0",
-          lineHeight: "1.5",
-        }}
-      >
-        Use the secure code below to confirm your luggage booking. This code
-        will expire in 10 minutes.
-      </p>
-
+      {/* Header */}
       <div
         style={{
-          backgroundColor: "#F6F2EA",
-          borderRadius: "16px",
-          padding: "24px",
-          fontSize: "36px",
-          fontWeight: "800",
-          letterSpacing: "8px",
-          color: "#1E5BD7",
-          margin: "0 0 30px 0",
-          fontFamily: "monospace",
+          backgroundColor: "#0A2E6D",
+          padding: "28px 40px 24px",
+          textAlign: "center",
         }}
       >
-        {otpCode}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://gviboyquykrdbtwxebfi.supabase.co/storage/v1/object/public/brand/Logo_primary.png"
+          alt="Yallah Baggage"
+          style={{ height: "40px", filter: "brightness(0) invert(1)" }}
+        />
       </div>
 
-      <p
-        style={{
-          fontSize: "14px",
-          color: "#8B7280",
-          margin: "0",
-          lineHeight: "1.5",
-        }}
-      >
-        If you didn&apos;t request this code, you can safely ignore this email.
-      </p>
+      {/* Body */}
+      <div style={{ padding: "36px 36px 32px", textAlign: "center" }}>
+        {/* Lock Icon */}
+        <div
+          style={{
+            fontSize: "40px",
+            marginBottom: "16px",
+          }}
+        >
+          🔐
+        </div>
 
+        <h1
+          style={{
+            fontSize: "22px",
+            fontWeight: "700",
+            margin: "0 0 8px 0",
+            color: "#0A2E6D",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Verify Your Booking
+        </h1>
+
+        <p
+          style={{
+            fontSize: "15px",
+            color: "#666666",
+            margin: "0 0 28px 0",
+            lineHeight: "1.6",
+          }}
+        >
+          Enter this code to confirm your luggage transfer.
+          <br />
+          It expires in <strong>10 minutes</strong>.
+        </p>
+
+        {/* OTP Code */}
+        <div
+          style={{
+            backgroundColor: "#EEF4FF",
+            borderRadius: "16px",
+            padding: "24px 20px",
+            marginBottom: "28px",
+            border: "1px dashed #1E5BD7",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "38px",
+              fontWeight: "800",
+              letterSpacing: "10px",
+              color: "#0A2E6D",
+              fontFamily: '"Courier New", monospace',
+              margin: "0",
+            }}
+          >
+            {otpCode}
+          </div>
+        </div>
+
+        <p
+          style={{
+            fontSize: "13px",
+            color: "#999999",
+            margin: "0",
+            lineHeight: "1.5",
+          }}
+        >
+          Didn&apos;t request this? No worries — just ignore this email.
+        </p>
+      </div>
+
+      {/* Footer */}
       <div
         style={{
-          marginTop: "40px",
-          paddingTop: "30px",
-          borderTop: "1px solid #F6F2EA",
+          backgroundColor: "#F9F8F6",
+          padding: "18px 36px",
+          textAlign: "center",
+          borderTop: "1px solid #F0EEE9",
         }}
       >
-        <p style={{ fontSize: "12px", color: "#8B7280", margin: "0" }}>
-          &copy; {new Date().getFullYear()} Yallah Baggage. Dubai&apos;s
-          Premier Luggage Concierge.
+        <p style={{ fontSize: "11px", color: "#8B7280", margin: "0" }}>
+          &copy; {new Date().getFullYear()} Yallah Baggage · Dubai&apos;s
+          Premier Luggage Concierge
         </p>
       </div>
     </div>

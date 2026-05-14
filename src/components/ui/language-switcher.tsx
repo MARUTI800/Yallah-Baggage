@@ -20,7 +20,7 @@ export default function LanguageSwitcher() {
     fr: "Français",
     zh: "中文",
     es: "Español",
-    nl: "Nederlands",
+    nl: "Dutch",
   };
 
   return (

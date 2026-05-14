@@ -7,9 +7,9 @@ import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel";
 import Footer4Col from "@/components/ui/footer-column";
 import { FaqAccordion } from "@/components/ui/faq-chat-accordion";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useRouter } from "@/navigation";
 import {
   Menu,
   X,
@@ -25,8 +25,8 @@ import { useTranslations, useLocale } from "next-intl";
 export const RevolutionHero = () => {
   const t = useTranslations();
   const locale = useLocale();
-  const isRtl = locale === "ar";
   const router = useRouter();
+  const isRtl = locale === "ar";
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
 
@@ -39,23 +39,24 @@ export const RevolutionHero = () => {
   return (
     <div className="w-full flex flex-col font-sans overflow-x-hidden">
       {/* ─── Navbar: Clean Uber-style flat ─── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${
-          scrolled
-            ? "bg-white/95 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.06)]"
-            : "bg-white/70 backdrop-blur-sm"
-        }`}
+      <header 
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+          scrolled 
+            ? "bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-b border-[#E5E5E5]/40 h-[80px] lg:h-[90px]" 
+            : "bg-white h-[80px] lg:h-[100px]"
+        )}
       >
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-full flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center h-full group">
             <Image
               src="/Logo_primary.png"
               alt="Yallah Baggage"
-              width={150}
-              height={60}
+              width={180}
+              height={70}
               priority
-              className="h-[60px] w-auto"
+              className="h-[70px] lg:h-[100px] w-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </Link>
 
@@ -109,24 +110,24 @@ export const RevolutionHero = () => {
           </nav>
 
           {/* CTA + Mobile Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="hidden lg:block">
+          <div className="flex items-center gap-4 lg:gap-6">
+            <div className="hidden lg:flex items-center">
               <LanguageSwitcher />
             </div>
             <Link
               href="/book-now"
-              className="hidden sm:flex items-center gap-2 bg-[#0A2E6D] text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-[#0D3A8A] transition-all duration-200 text-[15px] active:scale-[0.98]"
+              className="hidden sm:flex items-center gap-2 bg-[#0A2E6D] text-white font-bold py-3 px-8 rounded-full hover:bg-[#1E5BD7] transition-all duration-300 text-[15px] active:scale-[0.98] shadow-lg shadow-[#0A2E6D]/10"
             >
               {t("Navigation.bookNow")}
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-[#0A2E6D] hover:bg-[#F6F2EA] transition-colors"
+              className="lg:hidden w-12 h-12 flex items-center justify-center rounded-full text-[#0A2E6D] bg-[#F6F2EA]/80 hover:bg-[#F6F2EA] transition-all"
             >
               {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className="w-6 h-6" />
               )}
             </button>
           </div>
@@ -218,12 +219,15 @@ export const RevolutionHero = () => {
         </AnimatePresence>
       </header>
 
-      {/* ─── Hero Section: Clean Split Layout ─── */}
-      <section
-        id="home"
-        className="relative w-full min-h-screen bg-white flex items-center"
-      >
-        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-16 pt-[120px] lg:pt-[100px] pb-16 lg:pb-0">
+      {/* ─── Hero Section ─── */}
+      <section id="home" className="relative w-full min-h-[90vh] lg:min-h-screen flex flex-col bg-[#F6F2EA] overflow-hidden">
+        {/* Animated Mesh Gradient Background */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#1E5BD7]/5 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#0A2E6D]/5 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 pt-[120px] lg:pt-[140px] pb-12 lg:pb-20 relative z-10">
           {/* Left: Text Content */}
           <div className="w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left z-10">
             <motion.div
@@ -233,7 +237,8 @@ export const RevolutionHero = () => {
               className="space-y-6"
             >
               {/* Tag */}
-              <div className="inline-flex items-center gap-2 text-[#0A2E6D] text-sm font-semibold tracking-wide uppercase mb-2">
+              <div className="inline-flex items-center gap-2 bg-[#1E5BD7]/5 border border-[#1E5BD7]/10 px-4 py-2 rounded-full text-[#1E5BD7] text-xs font-bold tracking-[0.2em] uppercase mb-4 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1E5BD7] animate-pulse" />
                 {t("Hero.tagline")}
               </div>
 
@@ -252,14 +257,14 @@ export const RevolutionHero = () => {
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
                 <Link
                   href="/book-now"
-                  className="inline-flex items-center justify-center gap-2 bg-[#0A2E6D] text-white font-medium py-4 px-8 rounded-lg hover:bg-[#0A2E6D]/90 transition-all duration-200 text-base active:scale-[0.98]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#0A2E6D] text-white font-bold py-4.5 px-10 rounded-full hover:bg-[#1E5BD7] transition-all duration-300 text-lg active:scale-[0.98] shadow-xl shadow-[#0A2E6D]/20 hover:shadow-2xl hover:shadow-[#1E5BD7]/30"
                 >
                   {t("Hero.bookButton")}
                   <ArrowRight
-                    className={`w-4 h-4 ${isRtl ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 transition-transform duration-300 group-hover:translate-x-1 ${isRtl ? "rotate-180 group-hover:-translate-x-1" : ""}`}
                   />
                 </Link>
                 <Link
@@ -274,24 +279,25 @@ export const RevolutionHero = () => {
                       });
                     }
                   }}
-                  className="inline-flex items-center justify-center gap-2 bg-transparent text-[#0A2E6D] font-medium py-4 px-8 rounded-lg border border-[#0A2E6D] hover:bg-[#F6F2EA] transition-all duration-200 text-base"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-white text-[#0A2E6D] font-bold py-4.5 px-10 rounded-full border-2 border-[#0A2E6D]/10 hover:border-[#0A2E6D] hover:bg-[#F6F2EA]/50 transition-all duration-300 text-lg"
                 >
                   {t("Hero.howItWorksButton")}
                 </Link>
               </div>
 
               {/* Stats Strip */}
-              <div className="flex items-center gap-8 pt-6">
+              <div className="flex items-center gap-8 pt-8 border-t border-[#0A2E6D]/5">
                 {[
                   { value: "2.5k+", label: t("Hero.bagsHandled") },
                   { value: "99.98%", label: t("Hero.onTime") },
                   { value: "4.9★", label: t("Hero.rating") },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex flex-col">
+                ].map((stat, i) => (
+                  <div key={stat.label} className="flex flex-col relative">
+                    {i > 0 && <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-[1px] h-8 bg-[#0A2E6D]/10 hidden sm:block" />}
                     <span className="text-2xl font-bold text-[#0A2E6D] tracking-tight">
                       {stat.value}
                     </span>
-                    <span className="text-xs font-medium text-[#8B7280] tracking-wide uppercase">
+                    <span className="text-[10px] font-bold text-[#8B7280] tracking-widest uppercase">
                       {stat.label}
                     </span>
                   </div>
@@ -329,9 +335,9 @@ export const RevolutionHero = () => {
       </section>
 
       {/* ─── Features Strip ─── */}
-      <section id="services" className="w-full bg-[#F6F2EA] py-16 lg:py-20">
+      <section id="services" className="w-full bg-white py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 icon: Luggage,
@@ -353,34 +359,28 @@ export const RevolutionHero = () => {
                 title: t("Features.onTimeTitle"),
                 description: t("Features.onTimeDesc"),
               },
-            ].map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="flex flex-col items-start gap-4"
-                >
-                  <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-                    <Icon
-                      className="w-8 h-8 text-[#0A2E6D]"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-[#0A2E6D] mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-base text-[#8B7280] leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
+            ].map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="group flex flex-col sm:flex-row lg:flex-col items-center sm:items-start lg:items-center text-center sm:text-left lg:text-center gap-6 p-8 rounded-3xl bg-white border border-[#E5E5E5]/50 shadow-[0_4px_20px_rgba(10,46,109,0.03)] hover:shadow-[0_20px_40px_rgba(10,46,109,0.08)] hover:-translate-y-2 transition-all duration-500"
+              >
+                <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-[#F6F2EA] flex items-center justify-center text-[#1E5BD7] transition-all duration-500 group-hover:bg-[#1E5BD7] group-hover:text-white group-hover:rotate-[10deg] group-hover:scale-110 shadow-sm">
+                  <feature.icon className="size-7" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-[#0A2E6D] mb-3 tracking-tight">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[#8B7280] text-[15px] leading-relaxed font-medium">
+                    {feature.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -391,7 +391,7 @@ export const RevolutionHero = () => {
       </div>
 
       {/* ─── Process Section ─── */}
-      <section id="how-it-works" className="w-full bg-white py-24 lg:py-32">
+      <section id="how-it-works" className="w-full bg-white py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
           {/* Section Header */}
           <div className="mb-16 max-w-2xl">
@@ -403,44 +403,36 @@ export const RevolutionHero = () => {
             </p>
           </div>
 
-          {/* Process Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+          {/* Minimalist Process Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
             {[
               {
-                number: "01",
                 title: t("Process.step1Title"),
-                description: t("Process.step1Desc"),
-                image: "/app_screen.png",
+                image: "/app_screen_v2.png",
               },
               {
-                number: "02",
                 title: t("Process.step2Title"),
-                description: t("Process.step2Desc"),
-                image: "/delivery_uniform.png",
+                image: "/delivery_uniform_v2.png",
               },
               {
-                number: "03",
                 title: t("Process.step3Title"),
-                description: t("Process.step3Desc"),
-                image: "/van_branding.png",
+                image: "/van_branding_v2.png",
               },
               {
-                number: "04",
                 title: t("Process.step4Title"),
-                description: t("Process.step4Desc"),
-                image: "/luggage_tag.png",
+                image: "/luggage_tag_v2.png",
               },
             ].map((step, i) => (
               <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 24 }}
+                key={step.title}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex flex-col group"
+                transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+                className="flex flex-col group cursor-default"
               >
-                {/* Image */}
-                <div className="w-full aspect-[4/5] overflow-hidden mb-6 bg-[#F6F2EA] rounded-2xl relative">
+                {/* Clean Image Container */}
+                <div className="w-full aspect-[16/10] overflow-hidden rounded-[20px] mb-5 relative bg-[#F6F2EA]">
                   <Image
                     src={step.image}
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -448,18 +440,17 @@ export const RevolutionHero = () => {
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
+                  {/* Subtle vignette for depth, no borders/rings */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 </div>
-                {/* Content */}
-                <div className="flex flex-col items-start text-left">
-                  <div className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#8B7280] mb-2.5">
-                    {t("Process.stepLabel", { number: step.number })}
-                  </div>
-                  <h3 className="text-[22px] font-bold text-[#0A2E6D] mb-2 tracking-tight">
+                {/* Ultra-minimal Content */}
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#1E5BD7]/10 text-[#1E5BD7] text-xs font-bold">
+                    {i + 1}
+                  </span>
+                  <h3 className="text-xl font-bold text-[#0A2E6D] tracking-tight group-hover:text-[#1E5BD7] transition-colors">
                     {step.title}
                   </h3>
-                  <p className="text-[#8B7280] text-[15px] leading-relaxed">
-                    {step.description}
-                  </p>
                 </div>
               </motion.div>
             ))}
@@ -468,13 +459,16 @@ export const RevolutionHero = () => {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="w-full bg-[#F6F2EA] py-20 lg:py-24">
-        <div className="max-w-3xl mx-auto px-6 lg:px-10">
-          <div className="mb-12">
-            <p className="text-[#1E5BD7] font-semibold text-sm tracking-wide uppercase mb-3">
+      <section id="faq" className="relative w-full bg-[#F6F2EA] py-16 lg:py-20 overflow-hidden">
+        {/* Subtle Background Pattern */}
+        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#0A2E6D 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+        
+        <div className="max-w-3xl mx-auto px-6 lg:px-10 relative z-10">
+          <div className="mb-14 text-center">
+            <p className="text-[#1E5BD7] font-bold text-sm tracking-[0.2em] uppercase mb-4">
               {t("FAQ.support")}
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#0A2E6D] tracking-tight">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#0A2E6D] tracking-tight">
               {t("FAQ.title")}
             </h2>
           </div>
@@ -494,7 +488,7 @@ export const RevolutionHero = () => {
       <HotelLogoCarousel />
 
       {/* ─── CTA Banner ─── */}
-      <section className="w-full bg-[#0A2E6D] py-24 lg:py-32">
+      <section className="w-full bg-[#0A2E6D] py-16 lg:py-20">
         <div className="max-w-[800px] mx-auto px-6 lg:px-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -509,7 +503,7 @@ export const RevolutionHero = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
                 href="/book-now"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#0A2E6D] font-medium py-4 px-10 rounded-none hover:bg-[#F6F2EA] transition-all duration-200 text-base active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#0A2E6D] font-medium py-4 px-10 rounded-lg hover:bg-[#F6F2EA] transition-all duration-200 text-base active:scale-[0.98]"
               >
                 {t("CTA.button")}
               </Link>

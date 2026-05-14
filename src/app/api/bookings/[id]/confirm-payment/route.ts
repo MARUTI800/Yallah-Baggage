@@ -94,7 +94,7 @@ export async function POST(
           from: "Yallah Baggage <support@yallahbaggage.com>",
           to: [booking.email],
           subject: `✅ Booking Confirmed — ${booking.pickup_location} → ${booking.dropoff_location}`,
-          react: BookingConfirmedEmail({
+          react: React.createElement(BookingConfirmedEmail, {
             firstName: booking.first_name,
             trackingCode: trackingCode || "—",
             pickupLocation: booking.pickup_location,
@@ -109,10 +109,11 @@ export async function POST(
             adults: booking.adults ?? 1,
             children: booking.children ?? 0,
             totalPrice: booking.total_price ?? 0,
-            trackingUrl,
-          }) as React.ReactElement,
+            trackingUrl: trackingUrl
+          }),
         });
-      } catch {
+      } catch (emailErr) {
+        console.error("Failed to send booking confirmation email:", emailErr);
         // Don't fail the request — payment is already confirmed
       }
     }

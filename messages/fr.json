@@ -221,6 +221,7 @@
     "customNotes": "Notes personnalisées (facultatif)",
     "customNotesPlaceholder": "Instructions spéciales pour le ramassage/livraison...",
     "priceQuotation": "Devis",
+    "calculating": "Calcul en cours...",
     "backButton": "Retour",
     "savingText": "Enregistrement…",
     "reviewPayButton": "Vérifier et payer",

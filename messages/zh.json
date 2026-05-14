@@ -221,6 +221,7 @@
     "customNotes": "自定义备注（可选）",
     "customNotesPlaceholder": "提取/交付的特殊说明...",
     "priceQuotation": "价格报价",
+    "calculating": "计算中...",
     "backButton": "返回",
     "savingText": "保存中…",
     "reviewPayButton": "查看并支付",

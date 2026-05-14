@@ -1,13 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
 import "./../globals.css";
-
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://yallahbaggage.com"),
@@ -42,7 +34,7 @@ import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { locales } from "@/i18n/request";
 
-export default async function RootLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: {
@@ -57,23 +49,17 @@ export default async function RootLayout({
   }
 
   // Providing all messages to the client
-  // side is the easiest way to get started
   const messages = await getMessages();
 
   return (
-    <html
+    <div
+      className="min-h-full flex flex-col tracking-tight"
       lang={locale}
-      className={`${poppins.variable} h-full antialiased scroll-smooth`}
       dir={locale === "ar" ? "rtl" : "ltr"}
-      suppressHydrationWarning
     >
-      <body suppressHydrationWarning>
-        <div className="min-h-full flex flex-col tracking-tight">
-          <NextIntlClientProvider messages={messages}>
-            {children}
-          </NextIntlClientProvider>
-        </div>
-      </body>
-    </html>
+      <NextIntlClientProvider messages={messages}>
+        {children}
+      </NextIntlClientProvider>
+    </div>
   );
 }
