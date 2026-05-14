@@ -830,42 +830,44 @@ export const RideBookingForm = React.forwardRef<
 
           {/* Top Gradient Bar for custom UI (Google UI is cropped out via negative top) */}
           <div 
-            className="absolute top-0 left-0 right-0 h-[200px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-10"
-            style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.98) 0%, rgba(10, 46, 109, 0.85) 50%, transparent 100%)' }}
+            className="absolute top-0 left-0 right-0 h-[140px] z-30 pointer-events-none flex flex-col justify-start px-6 pt-6"
+            style={{ background: 'linear-gradient(to bottom, rgba(10, 46, 109, 0.9) 0%, rgba(10, 46, 109, 0.6) 50%, transparent 100%)' }}
           >
             {pickupSelected && 
              dropoffSelected && 
              pickupSelected.description && 
              dropoffSelected.description && 
              !pickupSelected.description.includes('[object Object]') ? (
-              <div className="flex flex-col gap-2.5">
-                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Route Overview</p>
-                <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-4 text-white text-sm font-medium">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                    <span className="truncate max-w-[280px]">{pickupSelected.description}</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 bg-emerald-500/20 self-start px-2 py-0.5 rounded-full border border-emerald-500/30 mb-1">
+                  <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 text-[8px] font-bold uppercase tracking-wider">Optimized Route</span>
+                </div>
+                <div className="flex flex-col gap-1.5 text-white text-[13px] font-medium">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
+                    <span className="truncate max-w-[240px]">{pickupSelected.description}</span>
                   </div>
-                  <div className="hidden xl:block w-1.5 h-1.5 rounded-full bg-white/20" />
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
-                    <span className="truncate max-w-[280px]">{dropoffSelected.description}</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3 h-3 text-[#1E5BD7] flex-shrink-0" />
+                    <span className="truncate max-w-[240px]">{dropoffSelected.description}</span>
                   </div>
                 </div>
               </div>
             ) : activeMapPreview && activeMapPreview.display_name && !activeMapPreview.display_name.includes('[object Object]') ? (
-              <div className="flex flex-col gap-2.5">
-                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Location Preview</p>
-                <div className="flex items-center gap-3 text-white text-sm font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
-                  <span className="truncate max-w-[400px]">{activeMapPreview.display_name}</span>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-white/40 font-bold text-[9px] uppercase tracking-widest mb-0.5">Location Preview</p>
+                <div className="flex items-center gap-2 text-white text-[13px] font-medium">
+                  <MapPin className="w-3 h-3 text-[#1E5BD7] flex-shrink-0" />
+                  <span className="truncate max-w-[300px]">{activeMapPreview.display_name}</span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
-                <p className="text-white/60 font-semibold text-xs uppercase tracking-widest">Yallah Baggage</p>
-                <div className="flex items-center gap-3 text-white text-sm font-medium">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#1E5BD7] flex-shrink-0 animate-pulse shadow-[0_0_8px_rgba(30,91,215,0.5)]" />
-                  <span>Select pickup and drop-off to calculate route</span>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-white/40 font-bold text-[9px] uppercase tracking-widest mb-0.5">Yallah Baggage</p>
+                <div className="flex items-center gap-2 text-white text-[13px] font-medium">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1E5BD7] flex-shrink-0 animate-pulse" />
+                  <span>Select locations to see route</span>
                 </div>
               </div>
             )}
