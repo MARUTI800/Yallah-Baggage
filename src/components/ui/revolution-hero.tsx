@@ -220,7 +220,7 @@ export const RevolutionHero = () => {
       </header>
 
       {/* ─── Hero Section ─── */}
-      <section id="home" className="relative w-full min-h-[90vh] lg:min-h-screen flex flex-col bg-[#F6F2EA] overflow-hidden">
+      <section id="home" className="relative w-full min-h-[90vh] lg:min-h-screen flex flex-col bg-[#F6F2EA] overflow-visible">
         {/* Animated Mesh Gradient Background */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#1E5BD7]/5 blur-[120px] animate-pulse" />

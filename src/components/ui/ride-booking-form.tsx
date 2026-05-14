@@ -563,7 +563,7 @@ export const RideBookingForm = React.forwardRef<
       ref={ref}
     >
       <motion.div
-        className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-2xl shadow-[0_4px_40px_rgba(10,46,109,0.08)] border border-[#E5E5E5] min-h-[520px]"
+        className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-2xl shadow-[0_4px_40px_rgba(10,46,109,0.08)] border border-[#E5E5E5] min-h-[520px] relative overflow-visible"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
