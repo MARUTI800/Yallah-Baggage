@@ -313,5 +313,24 @@
     "travellersCount": "2,500+",
     "travellers": "مسافر",
     "dubaiUAE": "دبي، الإمارات"
+  },
+  "Security": {
+    "title": "حماية وأمان بنسبة 100%",
+    "description": "يتم إغلاق أمتعتك بأختام ضد التلاعب، وتتبعها عبر نظام GPS وحمايتها بمبلغ 1000 دولار لكل طلب.",
+    "tamperProof": "أختام ضد التلاعب",
+    "gpsTracking": "تتبع مباشر عبر GPS",
+    "coverProtection": "حماية بقيمة 1000 دولار"
+  },
+  "Legal": {
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "prohibitedItems": "الأغراض المحظورة",
+    "bookingAcceptance": "عن طريق الحجز باستخدام Apple Pay أو Google Pay أو أي وسيلة دفع أخرى، فإنك توافق على {terms} و {privacy} و {prohibited} الخاصة بـ يلا باج"
+  },
+  "Promo": {
+    "title": "كود الخصم",
+    "placeholder": "كود الخصم أو بطاقة الهدايا",
+    "apply": "تطبيق الكود",
+    "invalid": "كود الخصم غير صحيح"
   }
 }

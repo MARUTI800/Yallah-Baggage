@@ -9,14 +9,20 @@ import { MapPin, Shield, Clock, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 
-type Coords = { lat: number; lng: number };
 
 function WizardWithParams({
   onLocationPin,
   onRouteUpdate,
 }: {
   onLocationPin: (lat: string, lon: string, name: string) => void;
-  onRouteUpdate: (origin: string | null, dest: string | null) => void;
+  onRouteUpdate: (
+    origin: string | null,
+    dest: string | null,
+    coords?: {
+      origin?: { lat: number; lng: number };
+      dest?: { lat: number; lng: number };
+    } | null,
+  ) => void;
 }) {
   const searchParams = useSearchParams();
   const pickupLocation = searchParams.get("pickup") || "";
@@ -51,6 +57,10 @@ export default function BookNowPage() {
   const [pinned, setPinned] = useState<PinnedLocation | null>(null);
   const [routeOrigin, setRouteOrigin] = useState<string | null>(null);
   const [routeDest, setRouteDest] = useState<string | null>(null);
+  const [routeCoords, setRouteCoords] = useState<{
+    origin?: { lat: number; lng: number };
+    dest?: { lat: number; lng: number };
+  } | null>(null);
 
   const trustPoints = [
     { icon: Shield, label: t("fullyInsured"), desc: t("allBagsCovered") },
@@ -61,31 +71,50 @@ export default function BookNowPage() {
   // Build map URL: route overview if both coords available, single pin otherwise, default Dubai
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
+  const hasValidRouteLabels =
+    !!routeOrigin &&
+    !!routeDest &&
+    !routeOrigin.includes("[object Object]") &&
+    !routeDest.includes("[object Object]") &&
+    routeOrigin !== "null" &&
+    routeDest !== "null";
+
+  const hasRouteCoords =
+    !!routeCoords?.origin?.lat &&
+    !!routeCoords?.origin?.lng &&
+    !!routeCoords?.dest?.lat &&
+    !!routeCoords?.dest?.lng;
+
   const mapSrc = useMemo(() => {
-    if (routeOrigin &&
-      routeDest &&
-      apiKey &&
-      !routeOrigin.includes('[object Object]') &&
-      !routeDest.includes('[object Object]') &&
-      routeOrigin !== 'null' &&
-      routeDest !== 'null') {
-      // Google Maps Embed API — directions mode: shows 2 markers + route polyline
-      return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(routeOrigin)}&destination=${encodeURIComponent(routeDest)}&mode=driving`;
+    // Prefer lat/lng — address strings often break embed directions (world zoom)
+    if (hasRouteCoords && apiKey) {
+      const o = `${routeCoords!.origin!.lat},${routeCoords!.origin!.lng}`;
+      const d = `${routeCoords!.dest!.lat},${routeCoords!.dest!.lng}`;
+      return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}&mode=driving`;
     }
     if (pinned && apiKey) {
-      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${pinned.lat},${pinned.lon}&zoom=15`;
+      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${pinned.lat},${pinned.lon}&zoom=14`;
     }
     if (apiKey) {
-      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=Dubai,UAE&zoom=12`;
+      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=Dubai,UAE&zoom=11`;
     }
-    // Fallback if no API key
-    return `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=12&ie=UTF8&iwloc=&output=embed`;
-  }, [routeOrigin, routeDest, pinned, apiKey]);
+    return `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=11&ie=UTF8&iwloc=&output=embed`;
+  }, [hasRouteCoords, routeCoords, pinned, apiKey]);
 
-  const handleRouteUpdate = (origin: string | null, dest: string | null) => {
+  const handleRouteUpdate = (
+    origin: string | null,
+    dest: string | null,
+    coords?: {
+      origin?: { lat: number; lng: number };
+      dest?: { lat: number; lng: number };
+    } | null,
+  ) => {
     setRouteOrigin(origin);
     setRouteDest(dest);
+    setRouteCoords(coords ?? null);
   };
+
+  const showRouteOnMap = hasValidRouteLabels && hasRouteCoords;
 
   return (
     <main className="relative w-full min-h-screen flex flex-col overflow-x-hidden bg-white">
@@ -120,14 +149,14 @@ export default function BookNowPage() {
         <div className="hidden lg:flex lg:w-[42%] xl:w-[38%] relative flex-col justify-end overflow-hidden flex-shrink-0 bg-[#0A2E6D]">
           <iframe
             key={mapSrc}
-            className={`absolute ${routeOrigin && routeDest ? "" : "pointer-events-none"}`}
+            className={`absolute ${showRouteOnMap ? "" : "pointer-events-none"}`}
             style={{
               border: 0,
-              top: "-130px",
+              top: showRouteOnMap ? "-80px" : "-130px",
               left: "-10px",
               width: "calc(100% + 20px)",
-              height: "calc(100% + 260px)",
-              opacity: routeOrigin && routeDest ? 1 : 0.6,
+              height: showRouteOnMap ? "calc(100% + 160px)" : "calc(100% + 260px)",
+              opacity: showRouteOnMap ? 1 : pinned ? 0.85 : 0.6,
               transition: "all 0.5s ease",
             }}
             loading="lazy"
@@ -137,12 +166,7 @@ export default function BookNowPage() {
           />
 
           {/* Ultra-Clean Transparent Route Overview */}
-          {routeOrigin &&
-            routeDest &&
-            !routeOrigin.includes('[object Object]') &&
-            !routeDest.includes('[object Object]') &&
-            routeOrigin !== 'null' &&
-            routeDest !== 'null' && (
+          {hasValidRouteLabels && (
               <div className="absolute top-6 left-6 z-30 pointer-events-none max-w-[320px]">
                 <div className="bg-[#0A2E6D]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-xl relative overflow-hidden">
                   <div className="flex flex-col gap-3 relative z-10">
@@ -157,14 +181,14 @@ export default function BookNowPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
                         <span className="text-white text-[13px] font-medium truncate">
-                          {decodeURIComponent(routeOrigin)}
+                          {routeOrigin}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
                         <MapPin className="w-3.5 h-3.5 text-[#1E5BD7] flex-shrink-0" />
                         <span className="text-white text-[13px] font-medium truncate">
-                          {decodeURIComponent(routeDest)}
+                          {routeDest}
                         </span>
                       </div>
                     </div>
@@ -177,7 +201,7 @@ export default function BookNowPage() {
           <div
             className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-500"
             style={{
-              background: routeOrigin && routeDest
+              background: showRouteOnMap
                 ? "linear-gradient(to top, rgba(10,46,109,0.85) 0%, transparent 40%)"
                 : "linear-gradient(to top, #0A2E6D 0%, rgba(10,46,109,0.7) 50%, rgba(10,46,109,0.3) 100%)",
             }}
@@ -185,7 +209,7 @@ export default function BookNowPage() {
 
           <div className="relative z-20 p-12 xl:p-16 flex flex-col gap-8">
             <AnimatePresence mode="wait">
-              {routeOrigin && routeDest ? (
+              {showRouteOnMap ? (
                 <motion.div
                   key="route"
                   initial={{ opacity: 0, y: 8 }}
@@ -196,6 +220,19 @@ export default function BookNowPage() {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-white text-sm font-semibold">
                     Route Calculated
+                  </span>
+                </motion.div>
+              ) : hasValidRouteLabels && !hasRouteCoords ? (
+                <motion.div
+                  key="route-loading"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="inline-flex items-center gap-2 self-start bg-white/10 border border-white/10 px-4 py-2 rounded-lg"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#1E5BD7] animate-pulse" />
+                  <span className="text-white/80 text-sm font-semibold">
+                    Calculating route…
                   </span>
                 </motion.div>
               ) : pinned ? (
@@ -228,7 +265,7 @@ export default function BookNowPage() {
             </AnimatePresence>
 
             {/* Hero text + trust info — hidden when route is showing */}
-            {!(routeOrigin && routeDest) && (
+            {!showRouteOnMap && (
               <>
                 <div>
                   <h1 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1] text-white mb-4">

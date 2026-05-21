@@ -100,7 +100,7 @@
     }
   },
   "Footer": {
-    "description": "Dubai's premier luggage concierge. Travel Light. We'll Handle the Rest.",
+    "description": "Dubai's elite luggage concierge service. We provide seamless, secure, and stress-free door-to-door luggage management for the modern traveler.",
     "company": "Company",
     "services": "Services",
     "support": "Support",
@@ -226,7 +226,7 @@
     "savingText": "Saving…",
     "reviewPayButton": "Review & Pay",
     "reviewOrder": "Review your order.",
-    "reviewSubtitle": "Everything look right? Then let's go.",
+    "reviewSubtitle": "Review your itinerary. Everything look perfect?",
     "paymentSuccessTitle": "Payment successful!",
     "paymentSuccessDesc": "Your order has been confirmed. We'll reach out shortly with pickup details.",
     "backToGuest": "Back to Guest Details",
@@ -313,5 +313,24 @@
     "travellersCount": "2,500+",
     "travellers": "travellers",
     "dubaiUAE": "Dubai, UAE"
+  },
+  "Security": {
+    "title": "THE YALLAH SIGNATURE OF SAFETY",
+    "description": "Excellence in security, tailored for the modern voyager. Our signature protection combines advanced physical seals with live telemetry and a $1,000 security guarantee.",
+    "tamperProof": "Signature Seals",
+    "gpsTracking": "Live Telemetry",
+    "coverProtection": "Elite Coverage"
+  },
+  "Legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "prohibitedItems": "Prohibited Items",
+    "bookingAcceptance": "By confirming your booking, you acknowledge and agree to Yallah Baggage's {terms}, {privacy}, and list of {prohibited}."
+  },
+  "Promo": {
+    "title": "Promo code",
+    "placeholder": "PROMO CODE OR GIFT CARD",
+    "apply": "Apply promo code",
+    "invalid": "Invalid promo code"
   }
 }

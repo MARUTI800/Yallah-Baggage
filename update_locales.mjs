@@ -7,6 +7,20 @@ const bookNow = {
   nl: { secureCheckout: "Veilig afrekenen", heroTitle1: "Uw bagage.", heroTitle2: "Onze missie.", heroDesc: "Handsfree reizen door Dubai en de VAE. Uw spullen arriveren voor u.", fullyInsured: "Volledig verzekerd", allBagsCovered: "Alle koffers gedekt", onTimeGuarantee: "Op-tijd garantie", moneyBack: "Of geld terug", ratingLabel: "4.9 Beoordeling", ratingDesc: "Van 1.800+ gasten", trustedBy: "Vertrouwd door", travellersCount: "2.500+", travellers: "reizigers", dubaiUAE: "Dubai, VAE" }
 };
 
+const security = {
+  en: { title: "100% SECURE & PROTECTION", description: "Your items are sealed with tamper-free seals, tracked via GPS & protected $1,000 per order.", tamperProof: "Tamper Proof Seals", gpsTracking: "Live GPS Tracking", coverProtection: "$1,000 Cover Protection" },
+  // For others, we'll use English as fallback if we don't have translations, 
+  // but it's better than crashing.
+};
+
+const legal = {
+  en: { privacyPolicy: "Privacy Policy", termsOfService: "Terms of Service", prohibitedItems: "Prohibited Items", bookingAcceptance: "By booking with Apple Pay, Google Pay or another payment method, you accept Yallah Baggage's {terms}, {privacy} & {prohibited}" }
+};
+
+const promo = {
+  en: { title: "Promo code", placeholder: "PROMO CODE OR GIFT CARD", apply: "Apply promo code", invalid: "Invalid promo code" }
+};
+
 const trackExtra = {
   fr: { formError: "E-mail, téléphone et code de suivi sont tous requis.", footerCopyright: "© 2026 Yallah Baggage. Le premier concierge de bagages à Dubaï." },
   zh: { formError: "电子邮件、电话和追踪代码均为必填项。", footerCopyright: "© 2026 Yallah Baggage。迪拜首屈一指的行李礼宾服务。" },
@@ -14,7 +28,6 @@ const trackExtra = {
   nl: { formError: "E-mail, telefoon en trackingcode zijn allemaal verplicht.", footerCopyright: "© 2026 Yallah Baggage. Dubai's eerste bagage-concierge." }
 };
 
-// Fix proper i18n values for BW keys 
 const bwFix = {
   zh: { days: "天", paymentMethod: "支付方式", cardPayment: "银行卡支付", cardPaymentDesc: "安全在线支付", cashOnDelivery: "货到付款", cashOnDeliveryDesc: "送达时付款", codPayMessage: "送达时支付 AED {amount}", confirming: "确认中...", confirmOrder: "确认订单", ages: { under1: "不到1岁", "1year": "1岁", "2years": "2岁", "3years": "3岁", "4years": "4岁", "5years": "5岁", "6to11": "6-11岁" } },
   es: { days: "días", paymentMethod: "Método de pago", cardPayment: "Pago con tarjeta", cardPaymentDesc: "Pague de forma segura en línea", cashOnDelivery: "Pago contra entrega", cashOnDeliveryDesc: "Pague al momento de la entrega", codPayMessage: "Pague AED {amount} al recibir sus maletas", confirming: "Confirmando...", confirmOrder: "Confirmar pedido", ages: { under1: "Menor de 1", "1year": "1 año", "2years": "2 años", "3years": "3 años", "4years": "4 años", "5years": "5 años", "6to11": "6-11 años" } },
@@ -25,26 +38,26 @@ for (const lang of ['fr', 'zh', 'es', 'nl']) {
   const path = `messages/${lang}.json`;
   const data = JSON.parse(fs.readFileSync(path, 'utf8'));
   
-  // Fix BW keys with proper unicode
   if (bwFix[lang]) {
     Object.assign(data.BookingWizard, bwFix[lang]);
   }
   
-  // Add BookNow section
   data.BookNow = bookNow[lang];
-  
-  // Add Track extras
   Object.assign(data.Track, trackExtra[lang]);
+  
+  // Add new sections (using English as default for now to prevent crashes)
+  data.Security = security[lang] || security.en;
+  data.Legal = legal[lang] || legal.en;
+  data.Promo = promo[lang] || promo.en;
   
   fs.writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
   console.log(`Updated ${lang}.json`);
 }
 
-// Fix ar.json - rebuild it cleanly
+// Fix ar.json
 const ar = JSON.parse(fs.readFileSync('messages/ar.json', 'utf8'));
-// Remove duplicate sections that got appended
 const cleanAr = {};
-const validKeys = ['Navigation', 'Hero', 'Logos', 'RideBookingForm', 'Track', 'Partnerships', 'Footer', 'HotelLogos', 'Status', 'Features', 'Process', 'FAQ', 'CTA', 'BookingWizard', 'BookNow'];
+const validKeys = ['Navigation', 'Hero', 'Logos', 'RideBookingForm', 'Track', 'Partnerships', 'Footer', 'HotelLogos', 'Status', 'Features', 'Process', 'FAQ', 'CTA', 'BookingWizard', 'BookNow', 'Security', 'Legal', 'Promo'];
 for (const key of validKeys) {
   if (ar[key]) cleanAr[key] = ar[key];
 }

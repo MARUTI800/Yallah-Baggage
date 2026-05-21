@@ -9,7 +9,6 @@ import {
   Clock,
   Loader2,
   CheckCircle2,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
   Navigation2,
@@ -259,27 +258,29 @@ function DateTimePicker({
               <div className="flex overflow-x-auto pb-1 gap-2 snap-x scrollbar-hide">
                 {availableTimes.map((timeSlot) => {
                   let isTimeDisabled = false;
-                  if (minDateTime) {
-                    const selDateOnly = new Date(selectedDate || new Date());
-                    selDateOnly.setHours(0, 0, 0, 0);
-                    const minDOnly = new Date(minDateTime);
-                    minDOnly.setHours(0, 0, 0, 0);
 
-                    if (selDateOnly.getTime() === minDOnly.getTime()) {
-                      const match = timeSlot.match(/(\d+):(\d+)\s(AM|PM)/);
-                      if (match) {
-                        let h = parseInt(match[1]);
-                        const m = parseInt(match[2]);
-                        const isPM = match[3] === "PM";
-                        if (isPM && h !== 12) h += 12;
-                        if (!isPM && h === 12) h = 0;
-                        const tDate = new Date(selectedDate || new Date());
-                        tDate.setHours(h, m, 0, 0);
-                        if (tDate.getTime() <= minDateTime.getTime()) {
-                          isTimeDisabled = true;
-                        }
-                      }
-                    } else if (selDateOnly.getTime() < minDOnly.getTime()) {
+                  const match = timeSlot.match(/(\d+):(\d+)\s(AM|PM)/);
+                  let h = 0, m = 0;
+                  if (match) {
+                    h = parseInt(match[1]);
+                    m = parseInt(match[2]);
+                    const isPM = match[3] === "PM";
+                    if (isPM && h !== 12) h += 12;
+                    if (!isPM && h === 12) h = 0;
+                  }
+
+                  const tDate = new Date(selectedDate || new Date());
+                  tDate.setHours(h, m, 0, 0);
+
+                  // Prevent selecting times that have already passed in Dubai
+                  const currentDubaiTime = hasMounted ? getDubaiTime() : new Date();
+                  if (tDate.getTime() <= currentDubaiTime.getTime()) {
+                    isTimeDisabled = true;
+                  }
+
+                  // Enforce minDateTime (e.g., delivery must be after pickup)
+                  if (!isTimeDisabled && minDateTime) {
+                    if (tDate.getTime() < minDateTime.getTime()) {
                       isTimeDisabled = true;
                     }
                   }
@@ -391,6 +392,28 @@ export const RideBookingForm = React.forwardRef<
     dt.setHours(h, m, 0, 0);
     return dt;
   }, [safePickupDate, pickupTime]);
+
+  React.useEffect(() => {
+    if (!hasMounted) return;
+    const currentDubaiTime = getDubaiTime();
+    if (pickupDateTime.getTime() <= currentDubaiTime.getTime()) {
+      const newDDT = new Date(currentDubaiTime.getTime() + 60 * 60 * 1000); // 1 hour minimum lead time
+      setPickupDate(
+        new Date(newDDT.getFullYear(), newDDT.getMonth(), newDDT.getDate()),
+      );
+
+      let h = newDDT.getHours();
+      let m = newDDT.getMinutes();
+      m = m <= 30 ? 30 : 0;
+      if (m === 0) h += 1;
+
+      const period = h >= 12 ? "PM" : "AM";
+      const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+      setPickupTime(
+        `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${period}`,
+      );
+    }
+  }, [pickupDateTime, hasMounted]);
 
   React.useEffect(() => {
     const match = deliveryTime.match(/(\d+):(\d+)\s(AM|PM)/);

@@ -10,6 +10,13 @@ function extractCountry(
   return comp?.short_name ?? null;
 }
 
+function parseDurationSeconds(duration: unknown): number {
+  if (typeof duration !== "string") return 0;
+  const normalized = duration.endsWith("s") ? duration.slice(0, -1) : duration;
+  const seconds = Number(normalized);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -82,6 +89,7 @@ export async function GET(req: Request) {
           origin: { address: origin },
           destination: { address: destination },
           travelMode: "DRIVE",
+          computeAlternativeRoutes: true,
         }),
       },
     );
@@ -93,14 +101,26 @@ export async function GET(req: Request) {
       routesData.routes &&
       routesData.routes.length > 0
     ) {
-      // Routes API succeeded
-      const route = routesData.routes[0];
-      distanceKm = (route.distanceMeters || 0) / 1000;
-      const durationSeconds = parseInt(
-        (route.duration || "0s").replace("s", ""),
-        10,
+      // Routes API succeeded - always pick one route (never aggregate).
+      const bestRoute = routesData.routes.reduce(
+        (
+          currentBest: { distanceMeters?: number; duration?: string } | null,
+          candidate: { distanceMeters?: number; duration?: string },
+        ) => {
+          const currentBestSeconds = parseDurationSeconds(currentBest?.duration);
+          const candidateSeconds = parseDurationSeconds(candidate.duration);
+
+          if (!currentBest) return candidate;
+          if (candidateSeconds === 0) return currentBest;
+          if (currentBestSeconds === 0) return candidate;
+          return candidateSeconds < currentBestSeconds ? candidate : currentBest;
+        },
+        null,
       );
-      durationMins = Math.ceil(durationSeconds / 60);
+
+      const bestDurationSeconds = parseDurationSeconds(bestRoute?.duration);
+      distanceKm = ((bestRoute?.distanceMeters as number) || 0) / 1000;
+      durationMins = Math.max(1, Math.ceil(bestDurationSeconds / 60));
     } else {
       // ── Fallback: Haversine from geocoded coords ──
       console.warn(

@@ -22,6 +22,8 @@ import {
 import LanguageSwitcher from "@/components/ui/language-switcher";
 import { useTranslations, useLocale } from "next-intl";
 
+import { SecuritySection } from "./security-section";
+
 export const RevolutionHero = () => {
   const t = useTranslations();
   const locale = useLocale();
@@ -511,6 +513,10 @@ export const RevolutionHero = () => {
           </motion.div>
         </div>
       </section>
+
+      <div className="px-6 lg:px-10 pb-12">
+        <SecuritySection />
+      </div>
 
       <Footer4Col />
     </div>

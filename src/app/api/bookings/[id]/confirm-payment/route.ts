@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { isCodPayment } from "@/lib/booking-payment";
 import { Resend } from "resend";
 import * as React from "react";
 import { BookingConfirmedEmail } from "@/components/emails/booking-confirmed-email";
@@ -7,6 +8,45 @@ import { BookingConfirmedEmail } from "@/components/emails/booking-confirmed-ema
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
+
+function cleanDate(dateStr: string) {
+  if (!dateStr) return "—";
+  const justDate = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
+  try {
+    const parts = justDate.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const date = new Date(year, month, day);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return justDate;
+}
+
+function cleanTime(timeStr: string) {
+  if (!timeStr) return "—";
+  const match = timeStr.match(/^(\d{2}):(\d{2})/);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+  }
+  return timeStr;
+}
 
 export async function POST(
   _req: Request,
@@ -39,6 +79,13 @@ export async function POST(
     }
 
     if (booking.status !== "pending_payment") {
+      if (booking.status === "confirmed") {
+        return NextResponse.json({
+          ok: true,
+          status: "confirmed",
+          trackingCode: booking.tracking_code ?? null,
+        });
+      }
       return NextResponse.json(
         { error: `Booking is already ${booking.status}.` },
         { status: 400 },
@@ -65,9 +112,8 @@ export async function POST(
       tracking_code: trackingCode,
     };
 
-    // Only mark as paid if the payment method was a card (stripe)
-    // For Cash on Delivery (cod), it remains confirmed but unpaid
-    if (booking.payment_method !== "cod") {
+    // Only mark as paid for card payments; COD stays confirmed but unpaid
+    if (!isCodPayment(booking.payment_method)) {
       updatePayload.paid_at = new Date().toISOString();
     }
 
@@ -94,22 +140,27 @@ export async function POST(
           from: "Yallah Baggage <support@yallahbaggage.com>",
           to: [booking.email],
           subject: `✅ Booking Confirmed — ${booking.pickup_location} → ${booking.dropoff_location}`,
+          // eslint-disable-next-line react/no-children-prop
           react: React.createElement(BookingConfirmedEmail, {
             firstName: booking.first_name,
             trackingCode: trackingCode || "—",
             pickupLocation: booking.pickup_location,
             dropoffLocation: booking.dropoff_location,
-            pickupDate: booking.pickup_date,
-            pickupTime: booking.pickup_time,
-            deliveryDate: booking.delivery_date,
-            deliveryTime: booking.delivery_time,
+            pickupDate: cleanDate(booking.pickup_date),
+            pickupTime: cleanTime(booking.pickup_time),
+            deliveryDate: cleanDate(booking.delivery_date),
+            deliveryTime: cleanTime(booking.delivery_time),
             numberOfBags: booking.number_of_bags,
             regularBags: booking.regular_bags ?? 0,
             oddSizedItems: booking.odd_sized_items ?? 0,
             adults: booking.adults ?? 1,
             children: booking.children ?? 0,
             totalPrice: booking.total_price ?? 0,
-            trackingUrl: trackingUrl
+            trackingUrl: trackingUrl,
+            hasLuggage: booking.service_type?.includes("Luggage"),
+            hasChauffeur: booking.service_type?.includes("Chauffeur"),
+            bagDiscount: booking.bag_discount ?? 0,
+            promoDiscount: booking.promo_discount ?? 0,
           }),
         });
       } catch (emailErr) {

@@ -16,6 +16,10 @@ interface BookingConfirmedEmailProps {
   children: number;
   totalPrice: string | number;
   trackingUrl: string;
+  hasLuggage: boolean;
+  hasChauffeur: boolean;
+  bagDiscount?: number;
+  promoDiscount?: number;
 }
 
 export const BookingConfirmedEmail: React.FC<
@@ -36,6 +40,10 @@ export const BookingConfirmedEmail: React.FC<
   children,
   totalPrice,
   trackingUrl,
+  hasLuggage,
+  hasChauffeur,
+  bagDiscount = 0,
+  promoDiscount = 0,
 }) => (
   <div
     style={{
@@ -232,6 +240,19 @@ export const BookingConfirmedEmail: React.FC<
                 </table>
               </td>
             </tr>
+            {/* Service Type */}
+            <tr>
+              <td style={{ padding: "14px 16px", borderBottom: "1px solid #F0EEE9" }}>
+                <div style={{ fontSize: "10px", fontWeight: "700", textTransform: "uppercase" as const, letterSpacing: "1.5px", color: "#8B7280", marginBottom: "4px" }}>
+                  🛋️ Selected Service
+                </div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#0A2E6D" }}>
+                  {hasLuggage ? "Luggage Transfer" : ""}
+                  {hasLuggage && hasChauffeur ? " + " : ""}
+                  {hasChauffeur ? "Chauffeur Service" : ""}
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
 
@@ -246,18 +267,71 @@ export const BookingConfirmedEmail: React.FC<
         >
           <table cellPadding="0" cellSpacing="0" style={{ width: "100%" }}>
             <tbody>
-              <tr>
-                <td style={{ verticalAlign: "middle" }}>
-                  <div style={{ fontSize: "13px", fontWeight: "600", color: "rgba(255,255,255,0.7)" }}>
-                    Total Paid
-                  </div>
-                </td>
-                <td style={{ textAlign: "right", verticalAlign: "middle" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "800", color: "#ffffff" }}>
-                    AED {totalPrice}
-                  </div>
-                </td>
-              </tr>
+              {(Number(bagDiscount) > 0 || Number(promoDiscount) > 0) ? (
+                <>
+                  <tr>
+                    <td style={{ paddingBottom: "8px", verticalAlign: "middle" }}>
+                      <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>Subtotal</div>
+                    </td>
+                    <td style={{ paddingBottom: "8px", textAlign: "right", verticalAlign: "middle" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "600", color: "#ffffff" }}>
+                        AED {Number(totalPrice) + Number(bagDiscount) + Number(promoDiscount)}
+                      </div>
+                    </td>
+                  </tr>
+                  {Number(bagDiscount) > 0 && (
+                    <tr>
+                      <td style={{ paddingBottom: "8px", verticalAlign: "middle" }}>
+                        <div style={{ fontSize: "12px", color: "#34D399", fontWeight: "600" }}>
+                          Multi-bag Discount (4 &amp; 4+ Bags)
+                        </div>
+                      </td>
+                      <td style={{ paddingBottom: "8px", textAlign: "right", verticalAlign: "middle" }}>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#34D399" }}>
+                          - AED {bagDiscount}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {Number(promoDiscount) > 0 && (
+                    <tr>
+                      <td style={{ paddingBottom: "8px", verticalAlign: "middle" }}>
+                        <div style={{ fontSize: "12px", color: "#34D399", fontWeight: "600" }}>
+                          Promo Discount
+                        </div>
+                      </td>
+                      <td style={{ paddingBottom: "8px", textAlign: "right", verticalAlign: "middle" }}>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#34D399" }}>
+                          - AED {promoDiscount}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td style={{ borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "12px", verticalAlign: "middle" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "700", color: "#ffffff" }}>Total Paid</div>
+                    </td>
+                    <td style={{ borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "12px", textAlign: "right", verticalAlign: "middle" }}>
+                      <div style={{ fontSize: "24px", fontWeight: "800", color: "#ffffff" }}>
+                        AED {totalPrice}
+                      </div>
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <tr>
+                  <td style={{ verticalAlign: "middle" }}>
+                    <div style={{ fontSize: "13px", fontWeight: "600", color: "rgba(255,255,255,0.7)" }}>
+                      Total Paid
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "right", verticalAlign: "middle" }}>
+                    <div style={{ fontSize: "24px", fontWeight: "800", color: "#ffffff" }}>
+                      AED {totalPrice}
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

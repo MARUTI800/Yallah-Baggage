@@ -42,7 +42,30 @@ type BookingData = {
   paidAt: string | null;
 };
 
+function normalizeStatus(rawStatus: string): string {
+  const compact = rawStatus.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const aliases: Record<string, string> = {
+    pending: "pending_payment",
+    payment_pending: "pending_payment",
+    pending_payment: "pending_payment",
+    confirmed: "confirmed",
+    pickup_scheduled: "pickup_scheduled",
+    pick_up_scheduled: "pickup_scheduled",
+    picked_up: "pickup_scheduled",
+    pickedup: "pickup_scheduled",
+    in_transit: "in_transit",
+    intransit: "in_transit",
+    out_for_delivery: "in_transit",
+    out_for_pickup: "pickup_scheduled",
+    delivered: "delivered",
+    complete: "delivered",
+    completed: "delivered",
+  };
+  return aliases[compact] ?? compact;
+}
+
 function getStatusIndex(status: string): number {
+  const normalized = normalizeStatus(status);
   const map: Record<string, number> = {
     pending_payment: -1,
     confirmed: 0,
@@ -51,7 +74,7 @@ function getStatusIndex(status: string): number {
     in_transit: 2,
     delivered: 3,
   };
-  return map[status] ?? 0;
+  return map[normalized] ?? 0;
 }
 
 function TrackingPageContent() {
@@ -96,6 +119,7 @@ function TrackingPageContent() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [booking, setBooking] = useState<BookingData | null>(null);
+  const displayStatus = booking ? normalizeStatus(booking.status) : "confirmed";
 
   // Listen for browser back/forward and URL changes
   React.useEffect(() => {
@@ -111,39 +135,63 @@ function TrackingPageContent() {
     }
   }, [searchParams, step, booking]);
 
+  const fetchBooking = React.useCallback(
+    async (opts?: { silent?: boolean; overrideCode?: string }) => {
+      const codeToUse = opts?.overrideCode ?? trackingCode;
+      if (!email.trim() || !phone.trim() || !codeToUse.trim()) {
+        if (!opts?.silent) setFormError(t("Track.formError"));
+        return null;
+      }
+      if (!opts?.silent) setFormError(null);
+      if (!opts?.silent) setIsLoading(true);
+      try {
+        const res = await fetch("/api/tracking/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            phone: phone.trim(),
+            trackingCode: codeToUse.trim(),
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to find order.");
+        setBooking(json.booking);
+        return json.booking as BookingData;
+      } catch (e) {
+        if (!opts?.silent) {
+          setFormError(e instanceof Error ? e.message : "Unexpected error.");
+        }
+        return null;
+      } finally {
+        if (!opts?.silent) setIsLoading(false);
+      }
+    },
+    [email, phone, trackingCode, t],
+  );
+
   const handleSearch = async () => {
     if (!email.trim() || !phone.trim() || !trackingCode.trim()) {
       setFormError(t("Track.formError"));
       return;
     }
-    setFormError(null);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch("/api/tracking/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          phone: phone.trim(),
-          trackingCode: trackingCode.trim(),
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to find order.");
-
-      setBooking(json.booking);
+    const foundBooking = await fetchBooking();
+    if (foundBooking) {
       setStep("tracking");
       // Update URL so browser back button works
       router.push(
-        `/track?email=${encodeURIComponent(email)}&code=${encodeURIComponent(json.booking.trackingCode)}`,
+        `/track?email=${encodeURIComponent(email)}&code=${encodeURIComponent(foundBooking.trackingCode)}`,
       );
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Unexpected error.");
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (step !== "tracking" || !booking) return;
+    const id = window.setInterval(() => {
+      void fetchBooking({ silent: true, overrideCode: booking.trackingCode });
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, [step, booking, fetchBooking]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -336,21 +384,21 @@ function TrackingPageContent() {
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
                     className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
-                      booking.status === "delivered"
+                      displayStatus === "delivered"
                         ? "bg-[#F6F2EA] border border-[#E5E5E5]"
                         : "bg-emerald-50 border border-emerald-200"
                     }`}
                   >
-                    {booking.status === "delivered" ? (
+                    {displayStatus === "delivered" ? (
                       <CircleCheck className="w-7 h-7 text-[#0A2E6D]" />
                     ) : (
                       <Package className="w-7 h-7 text-emerald-500" />
                     )}
                   </motion.div>
                   <h2 className="text-2xl font-bold tracking-tight text-[#0A2E6D] mb-1">
-                    {booking.status === "delivered"
+                    {displayStatus === "delivered"
                       ? t("Track.delivered")
-                      : booking.status === "in_transit"
+                      : displayStatus === "in_transit"
                         ? t("Track.inTransit")
                         : t("Track.orderConfirmed")}
                   </h2>
@@ -366,7 +414,7 @@ function TrackingPageContent() {
                 <div className="bg-[#F6F2EA]/40 border border-[#E5E5E5] rounded-xl p-6">
                   <div className="space-y-0">
                     {STATUS_STEPS.map((s, i) => {
-                      const currentIdx = getStatusIndex(booking.status);
+                      const currentIdx = getStatusIndex(displayStatus);
                       const isComplete = i <= currentIdx;
                       const isCurrent = i === currentIdx;
                       const Icon = s.icon;

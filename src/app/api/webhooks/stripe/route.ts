@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { headers } from "next/headers";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { isCodPayment } from "@/lib/booking-payment";
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -55,9 +56,14 @@ export async function POST(req: Request) {
       // set it to "confirmed". This webhook acts as a safety net / backup.
       const { data: booking } = await supabase
         .from("bookings")
-        .select("status")
+        .select("status, payment_method")
         .eq("id", bookingId)
         .single();
+
+      // Don't process webhook for COD bookings
+      if (booking && isCodPayment(booking.payment_method)) {
+        return NextResponse.json({ received: true });
+      }
 
       if (booking && booking.status === "pending_payment") {
         // Generate tracking code as a backup if it hasn't been done yet
@@ -73,19 +79,8 @@ export async function POST(req: Request) {
           .update({
             status: "confirmed",
             paid_at: new Date().toISOString(),
-            payment_reference: paymentIntent.id,
             tracking_code: trackingCode,
           })
-          .eq("id", bookingId);
-
-        if (error) {
-          // Silently fail - webhook is a backup mechanism
-        }
-      } else if (booking && booking.status === "confirmed") {
-        // Already confirmed by the client-side call; just store the Stripe reference
-        const { error } = await supabase
-          .from("bookings")
-          .update({ payment_reference: paymentIntent.id })
           .eq("id", bookingId);
 
         if (error) {

@@ -313,5 +313,24 @@
     "travellersCount": "2 500+",
     "travellers": "voyageurs",
     "dubaiUAE": "Dubaï, ÉAU"
+  },
+  "Security": {
+    "title": "100% SECURE & PROTECTION",
+    "description": "Your items are sealed with tamper-free seals, tracked via GPS & protected $1,000 per order.",
+    "tamperProof": "Tamper Proof Seals",
+    "gpsTracking": "Live GPS Tracking",
+    "coverProtection": "$1,000 Cover Protection"
+  },
+  "Legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "prohibitedItems": "Prohibited Items",
+    "bookingAcceptance": "By booking with Apple Pay, Google Pay or another payment method, you accept Yallah Baggage's {terms}, {privacy} & {prohibited}"
+  },
+  "Promo": {
+    "title": "Promo code",
+    "placeholder": "PROMO CODE OR GIFT CARD",
+    "apply": "Apply promo code",
+    "invalid": "Invalid promo code"
   }
 }

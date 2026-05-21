@@ -47,6 +47,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/navigation";
 import { getDubaiTime } from "@/lib/utils";
 
 type Step = 1 | 2 | 3 | 4;
@@ -70,12 +71,16 @@ type BookingDraft = {
   children: number;
   childrenAges: string[];
   isSurge?: boolean;
-  paymentMethod?: "stripe" | "cod";
+  paymentMethod?: "card" | "cod";
   distanceKm?: number;
   durationMins?: number;
   isInternational?: boolean;
   originCoords?: { lat: number; lng: number };
   destCoords?: { lat: number; lng: number };
+  promoCode?: string;
+  promoDiscount?: number;
+  hasLuggage: boolean;
+  hasChauffeur: boolean;
 };
 
 interface GooglePrediction {
@@ -105,7 +110,11 @@ const defaultDraft: BookingDraft = {
   adults: 1,
   children: 0,
   childrenAges: [],
-  paymentMethod: "stripe",
+  paymentMethod: "card",
+  promoCode: "",
+  promoDiscount: 0,
+  hasLuggage: true,
+  hasChauffeur: false,
 };
 
 function isValidEmail(email: string) {
@@ -471,6 +480,7 @@ function DateTimePicker({
   const t = useTranslations("BookingWizard");
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasMounted(true);
   }, []);
 
@@ -658,27 +668,28 @@ function DateTimePicker({
                 />
                 {availableTimesList.map((timeSlot) => {
                   let isTimeDisabled = false;
-                  if (minDateTime) {
-                    const selDateOnly = new Date(selectedDate);
-                    selDateOnly.setHours(0, 0, 0, 0);
-                    const minDOnly = new Date(minDateTime);
-                    minDOnly.setHours(0, 0, 0, 0);
+                  const match = timeSlot.match(/(\d+):(\d+)\s(AM|PM)/);
+                  let h = 0, m = 0;
+                  if (match) {
+                    h = parseInt(match[1]);
+                    m = parseInt(match[2]);
+                    const isPM = match[3] === "PM";
+                    if (isPM && h !== 12) h += 12;
+                    if (!isPM && h === 12) h = 0;
+                  }
 
-                    if (selDateOnly.getTime() === minDOnly.getTime()) {
-                      const match = timeSlot.match(/(\d+):(\d+)\s(AM|PM)/);
-                      if (match) {
-                        let h = parseInt(match[1]);
-                        const m = parseInt(match[2]);
-                        const isPM = match[3] === "PM";
-                        if (isPM && h !== 12) h += 12;
-                        if (!isPM && h === 12) h = 0;
-                        const tDate = new Date(selectedDate);
-                        tDate.setHours(h, m, 0, 0);
-                        if (tDate.getTime() <= minDateTime.getTime()) {
-                          isTimeDisabled = true;
-                        }
-                      }
-                    } else if (selDateOnly.getTime() < minDOnly.getTime()) {
+                  const tDate = new Date(selectedDate);
+                  tDate.setHours(h, m, 0, 0);
+
+                  // Prevent selecting times that have already passed in Dubai
+                  const currentDubaiTime = hasMounted ? getDubaiTime() : new Date();
+                  if (tDate.getTime() <= currentDubaiTime.getTime()) {
+                    isTimeDisabled = true;
+                  }
+
+                  // Enforce minDateTime (e.g., delivery must be after pickup)
+                  if (!isTimeDisabled && minDateTime) {
+                    if (tDate.getTime() < minDateTime.getTime()) {
                       isTimeDisabled = true;
                     }
                   }
@@ -788,16 +799,27 @@ export function BookingWizard({
   initialDraft = {},
 }: {
   onLocationPin?: (lat: string, lon: string, name: string) => void;
-  onRouteUpdate?: (originStr: string | null, destStr: string | null) => void;
+  onRouteUpdate?: (
+    originStr: string | null,
+    destStr: string | null,
+    coords?: {
+      origin?: { lat: number; lng: number };
+      dest?: { lat: number; lng: number };
+    } | null,
+  ) => void;
   initialDraft?: Partial<BookingDraft>;
 }) {
   const t = useTranslations("BookingWizard");
+  const pt = useTranslations("Promo");
+  const lt = useTranslations("Legal");
   const locale = useLocale();
   const isRtl = locale === "ar";
   const [step, setStep] = useState<Step>(1);
   const [activePicker, setActivePicker] = useState<
     "pickup" | "delivery" | null
   >(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const [draft, setDraft] = useState<BookingDraft>({
     ...defaultDraft,
     ...initialDraft,
@@ -816,6 +838,7 @@ export function BookingWizard({
   const [isConfirmingOrder, setIsConfirmingOrder] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [distanceLoading, setDistanceLoading] = useState(false);
+  const [deliveryManuallyEdited, setDeliveryManuallyEdited] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
@@ -823,55 +846,101 @@ export function BookingWizard({
 
   // Fetch real distance from API when both locations are confirmed
   useEffect(() => {
-    // Only fetch when both locations are fully set (real addresses, not partial typing)
-    if (draft.pickupLocation.length < 5 || draft.dropoffLocation.length < 5) {
+    const pickup = draft.pickupLocation.trim();
+    const dropoff = draft.dropoffLocation.trim();
+
+    if (pickup.length < 5 || dropoff.length < 5) {
+      onRouteUpdate?.(null, null, null);
       return;
     }
+    setDeliveryManuallyEdited(false);
 
-    // Reset distance while we fetch the new one
     setDistanceLoading(true);
-    setDraft((d) => ({ ...d, distanceKm: undefined, durationMins: undefined, isInternational: undefined, originCoords: undefined, destCoords: undefined }));
+    setDraft((d) => ({
+      ...d,
+      distanceKm: undefined,
+      durationMins: undefined,
+      isInternational: undefined,
+      originCoords: undefined,
+      destCoords: undefined,
+    }));
+    // Labels only until geocoded coords arrive (avoids broken address-based embed zoom)
+    onRouteUpdate?.(pickup, dropoff, null);
+
+    let cancelled = false;
 
     const fetchDistance = async () => {
       try {
         const res = await fetch(
-          `/api/places/distance?origin=${encodeURIComponent(draft.pickupLocation)}&destination=${encodeURIComponent(draft.dropoffLocation)}`,
+          `/api/places/distance?origin=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(dropoff)}`,
         );
         const data = await res.json();
-        if (data.distanceKm && data.distanceKm > 0) {
-          setDraft((d) => ({ 
-            ...d, 
-            distanceKm: data.distanceKm,
-            durationMins: data.durationMins || Math.round(data.distanceKm * 1.5),
+        if (cancelled) return;
+
+        if (data.originCoords && data.destCoords) {
+          setDraft((d) => ({
+            ...d,
+            distanceKm: data.distanceKm > 0 ? data.distanceKm : d.distanceKm,
+            durationMins:
+              data.durationMins ||
+              (data.distanceKm > 0 ? Math.round(data.distanceKm * 1.5) : undefined),
             isInternational: data.isInternational || false,
             originCoords: data.originCoords,
             destCoords: data.destCoords,
           }));
-          // Push route strings to parent for map overview
-          onRouteUpdate?.(draft.pickupLocation || null, draft.dropoffLocation || null);
+          onRouteUpdate?.(pickup, dropoff, {
+            origin: data.originCoords,
+            dest: data.destCoords,
+          });
         }
       } catch (err) {
-        console.error("Failed to fetch distance:", err);
+        if (!cancelled) console.error("Failed to fetch distance:", err);
       } finally {
-        setDistanceLoading(false);
+        if (!cancelled) setDistanceLoading(false);
       }
     };
 
     const tid = setTimeout(fetchDistance, 500);
     return () => {
+      cancelled = true;
       clearTimeout(tid);
       setDistanceLoading(false);
     };
-  }, [draft.pickupLocation, draft.dropoffLocation]);
+  }, [draft.pickupLocation, draft.dropoffLocation, onRouteUpdate]);
 
   const pickupDateTime = useMemo(
     () => getComparableDate(draft.pickupDate, draft.pickupTime),
     [draft.pickupDate, draft.pickupTime],
   );
 
+  useEffect(() => {
+    if (!hasMounted) return;
+    const currentDubaiTime = getDubaiTime();
+    
+    // If pickupDate/Time are empty, or if they represent a time in the past
+    if (pickupDateTime.getTime() <= currentDubaiTime.getTime()) {
+      const newDDT = new Date(currentDubaiTime.getTime() + 60 * 60 * 1000); // 1 hr buffer
+      
+      const newDateStr = fmtDate(newDDT);
+      let h = newDDT.getHours();
+      let m = newDDT.getMinutes();
+      m = m <= 30 ? 30 : 0;
+      if (m === 0) h += 1;
+
+      const period = h >= 12 ? "PM" : "AM";
+      const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+      const newTimeStr = `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${period}`;
+      
+      if (draft.pickupDate !== newDateStr || draft.pickupTime !== newTimeStr) {
+        setDraft((d) => ({ ...d, pickupDate: newDateStr, pickupTime: newTimeStr }));
+      }
+    }
+  }, [pickupDateTime, hasMounted, draft.pickupDate, draft.pickupTime]);
+
   const minDeliveryDateTime = useMemo(() => {
-    const requiredBufferMins = draft.durationMins ? draft.durationMins + 30 : 60;
-    return new Date(pickupDateTime.getTime() + requiredBufferMins * 60 * 1000);
+    const duration = draft.durationMins || 30;
+    const roundedDuration = Math.ceil(duration / 30) * 30;
+    return new Date(pickupDateTime.getTime() + roundedDuration * 60 * 1000);
   }, [pickupDateTime, draft.durationMins]);
 
   // Fetch surge status when pickup date/time changes
@@ -898,7 +967,9 @@ export function BookingWizard({
   useEffect(() => {
     if (!draft.pickupDate || !draft.pickupTime) return;
     const ddt = getComparableDate(draft.deliveryDate, draft.deliveryTime);
-    if (ddt.getTime() < minDeliveryDateTime.getTime()) {
+    const shouldSyncToMin =
+      ddt.getTime() < minDeliveryDateTime.getTime() || !deliveryManuallyEdited;
+    if (shouldSyncToMin) {
       const newDDT = new Date(minDeliveryDateTime.getTime());
 
       const newDateStr = fmtDate(newDDT);
@@ -923,6 +994,7 @@ export function BookingWizard({
     draft.deliveryTime,
     draft.pickupDate,
     draft.pickupTime,
+    deliveryManuallyEdited,
   ]);
 
   // Automated Service Type Selection removed
@@ -1015,7 +1087,9 @@ export function BookingWizard({
         adults: draft.adults,
         children: draft.children,
         childrenAges: draft.childrenAges,
-        paymentMethod: draft.paymentMethod || "stripe",
+        paymentMethod: draft.paymentMethod || "card",
+        hasLuggage: draft.hasLuggage,
+        hasChauffeur: draft.hasChauffeur,
       };
 
       const res = await fetch("/api/bookings", {
@@ -1028,13 +1102,13 @@ export function BookingWizard({
         throw new Error(json.error ?? "Failed to create booking.");
       setBookingId(json.bookingId);
 
-      // For COD, skip payment and go directly to confirmation
+      // For COD, confirm immediately (pass id — state may not have updated yet)
       if (draft.paymentMethod === "cod") {
-        await handlePaymentSuccess();
+        await handlePaymentSuccess(json.bookingId);
         return;
       }
 
-      // Fetch Stripe client secret for card payment
+      // Card: load Stripe payment form on step 3
       const piRes = await fetch("/api/payments/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1045,7 +1119,6 @@ export function BookingWizard({
         throw new Error("Failed to initialize payment gateway.");
       }
       setClientSecret(piJson.clientSecret);
-      setStep(3);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unexpected error.");
     } finally {
@@ -1072,9 +1145,10 @@ export function BookingWizard({
       const checkJson = await checkRes.json();
 
       if (checkJson.verified) {
-        // Email already verified from a previous booking — skip OTP
-        setIsSubmitting(false);
-        await submitBooking();
+        // Email already verified — go to step 3 to choose payment method
+        setBookingId(null);
+        setClientSecret(null);
+        setStep(3);
         return;
       }
 
@@ -1119,7 +1193,9 @@ export function BookingWizard({
 
       setTrackingOtp(otpCode);
       setShowOtpModal(false);
-      await submitBooking();
+      setBookingId(null);
+      setClientSecret(null);
+      setStep(3);
     } catch (e: unknown) {
       if (e instanceof Error) {
         setOtpError(e.message);
@@ -1157,11 +1233,21 @@ export function BookingWizard({
     }
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (bookingIdOverride?: string) => {
+    // Ignore accidental click/event objects passed as the first argument
+    const id =
+      typeof bookingIdOverride === "string" && bookingIdOverride.length > 0
+        ? bookingIdOverride
+        : bookingId;
+    if (!id) {
+      setError("Booking not found. Please try again.");
+      return;
+    }
+
+    setError(null);
     setIsConfirmingOrder(true);
     try {
-      // Confirm the order in the backend now that payment has succeeded
-      const res = await fetch(`/api/bookings/${bookingId}/confirm-payment`, {
+      const res = await fetch(`/api/bookings/${id}/confirm-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -1273,12 +1359,14 @@ export function BookingWizard({
                 setIsOpen={(v) => setActivePicker(v ? "delivery" : null)}
                 dateVal={draft.deliveryDate}
                 timeVal={draft.deliveryTime}
-                onDateChange={(v) =>
-                  setDraft((d) => ({ ...d, deliveryDate: v }))
-                }
-                onTimeChange={(v) =>
-                  setDraft((d) => ({ ...d, deliveryTime: v }))
-                }
+                onDateChange={(v) => {
+                  setDeliveryManuallyEdited(true);
+                  setDraft((d) => ({ ...d, deliveryDate: v }));
+                }}
+                onTimeChange={(v) => {
+                  setDeliveryManuallyEdited(true);
+                  setDraft((d) => ({ ...d, deliveryTime: v }));
+                }}
                 minDateTime={minDeliveryDateTime}
               />
             </div>
@@ -1380,89 +1468,195 @@ export function BookingWizard({
               </div>
             </div>
 
-            {/* Service Type removed */}
-
-            {/* Travellers counters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Adults */}
-              <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
-                    {t("adultsLabel")}
-                  </p>
-                  <p className="text-[#8B7280] text-xs">{t("adultsAge")}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        adults: Math.max(1, d.adults - 1),
-                      }))
-                    }
-                    className="w-8 h-8 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="text-xl font-semibold text-[#0A2E6D] w-6 text-center tabular-nums">
-                    {draft.adults}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setDraft((d) => ({ ...d, adults: d.adults + 1 }))
-                    }
-                    className="w-8 h-8 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            {/* Service Type Selection */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black tracking-[0.15em] uppercase text-[#8B7280] block mb-2 pl-1">
+                Service Selection
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  disabled
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    draft.hasLuggage
+                      ? "border-[#1E5BD7] bg-[#1E5BD7]/5 shadow-sm"
+                      : "border-[#E5E5E5] bg-white hover:border-[#1E5BD7]/30"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <Luggage className={`w-5 h-5 ${draft.hasLuggage ? "text-[#1E5BD7]" : "text-[#8B7280]"}`} />
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${draft.hasLuggage ? "bg-[#1E5BD7] border-[#1E5BD7]" : "border-[#E5E5E5]"}`}>
+                      {draft.hasLuggage && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-[#0A2E6D]">Luggage Transfer</p>
+                  <p className="text-[10px] text-[#8B7280] font-medium leading-tight mt-0.5">Door-to-door</p>
+                </button>
+                <button
+                  onClick={() => {
+                    const nextValue = !draft.hasChauffeur;
+                    setDraft({ ...draft, hasChauffeur: nextValue });
+                  }}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    draft.hasChauffeur
+                      ? "border-[#1E5BD7] bg-[#1E5BD7]/5 shadow-sm"
+                      : "border-[#E5E5E5] bg-white hover:border-[#1E5BD7]/30"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <User className={`w-5 h-5 ${draft.hasChauffeur ? "text-[#1E5BD7]" : "text-[#8B7280]"}`} />
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${draft.hasChauffeur ? "bg-[#1E5BD7] border-[#1E5BD7]" : "border-[#E5E5E5]"}`}>
+                      {draft.hasChauffeur && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-[#0A2E6D]">Chauffeur Service</p>
+                  <p className="text-[10px] text-[#8B7280] font-medium leading-tight mt-0.5">Luxury ride</p>
+                </button>
               </div>
-
-              {/* Children */}
-              <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
-                    {t("childrenLabel")}
-                  </p>
-                  <p className="text-[#8B7280] text-xs">{t("childrenAge")}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() =>
-                      setDraft((d) => {
-                        const newCount = Math.max(0, d.children - 1);
-                        return {
-                          ...d,
-                          children: newCount,
-                          childrenAges: d.childrenAges.slice(0, newCount),
-                        };
-                      })
-                    }
-                    className="w-8 h-8 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="text-xl font-semibold text-[#0A2E6D] w-6 text-center tabular-nums">
-                    {draft.children}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        children: d.children + 1,
-                        childrenAges: [...d.childrenAges, ""],
-                      }))
-                    }
-                    className="w-8 h-8 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+              <p className="text-[11px] text-[#8B7280] pl-1">
+                Luggage transfer is mandatory. Chauffeur service is optional.
+              </p>
             </div>
 
-            {/* Child Ages */}
-            {draft.children > 0 && (
+            {/* Luggage Counters - ONLY if Luggage selected */}
+            {draft.hasLuggage && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-3 pt-2"
+              >
+                <label className="text-[10px] font-black tracking-[0.15em] uppercase text-[#8B7280] block pl-1">
+                  Luggage Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Regular Bags */}
+                  <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
+                        {t("regular")}
+                      </p>
+                      <p className="text-[#8B7280] text-[10px] leading-tight max-w-[120px]">{t("regularDesc")}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, regularBags: Math.max(0, d.regularBags - 1), numberOfBags: Math.max(1, d.regularBags - 1 + d.oddSizedItems) }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-lg font-semibold text-[#0A2E6D] w-5 text-center tabular-nums">
+                        {draft.regularBags}
+                      </span>
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, regularBags: d.regularBags + 1, numberOfBags: d.regularBags + 1 + d.oddSizedItems }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Odd-sized */}
+                  <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
+                        {t("oddSized")}
+                      </p>
+                      <p className="text-[#8B7280] text-[10px] leading-tight max-w-[120px]">{t("oddSizedDesc")}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, oddSizedItems: Math.max(0, d.oddSizedItems - 1), numberOfBags: Math.max(1, d.regularBags + d.oddSizedItems - 1) }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-lg font-semibold text-[#0A2E6D] w-5 text-center tabular-nums">
+                        {draft.oddSizedItems}
+                      </span>
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, oddSizedItems: d.oddSizedItems + 1, numberOfBags: d.regularBags + d.oddSizedItems + 1 }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Travellers counters - ONLY if Chauffeur selected */}
+            {draft.hasChauffeur && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-3 pt-2"
+              >
+                <label className="text-[10px] font-black tracking-[0.15em] uppercase text-[#8B7280] block pl-1">
+                  Passenger Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Adults */}
+                  <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
+                        {t("adultsLabel")}
+                      </p>
+                      <p className="text-[#8B7280] text-xs">{t("adultsAge")}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, adults: Math.max(1, d.adults - 1) }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-lg font-semibold text-[#0A2E6D] w-5 text-center tabular-nums">
+                        {draft.adults}
+                      </span>
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, adults: d.adults + 1 }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Children */}
+                  <div className="bg-[#F6F2EA]/60 border border-[#E5E5E5] rounded-xl px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#8B7280] mb-0.5">
+                        {t("childrenLabel")}
+                      </p>
+                      <p className="text-[#8B7280] text-xs">{t("childrenAge")}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDraft((d) => {
+                          const newCount = Math.max(0, d.children - 1);
+                          return { ...d, children: newCount, childrenAges: d.childrenAges.slice(0, newCount) };
+                        })}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-lg font-semibold text-[#0A2E6D] w-5 text-center tabular-nums">
+                        {draft.children}
+                      </span>
+                      <button
+                        onClick={() => setDraft((d) => ({ ...d, children: d.children + 1, childrenAges: [...d.childrenAges, ""] }))}
+                        className="w-7 h-7 rounded-full border border-[#E5E5E5] flex items-center justify-center text-[#0A2E6D] hover:bg-[#0A2E6D] hover:text-white transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Child Ages - ONLY if Chauffeur selected */}
+            {draft.hasChauffeur && draft.children > 0 && (
               <div className="space-y-3 mt-4 pt-4 border-t border-[#E5E5E5]/60">
                 <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#8B7280] flex items-center gap-2 pl-1">
                   {t("childAges")}
@@ -1665,24 +1859,26 @@ export function BookingWizard({
 
               <div className="space-y-2">
                 {/* Delivery fee */}
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#8B7280]">
-                    {distanceLoading ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        {draft.isInternational ? "International Shipping" : "Delivery Fee"} ({t("calculating")})
-                      </span>
-                    ) : (
-                      <>{draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}</>
-                    )}
-                  </span>
-                  <span className="font-semibold text-[#0A2E6D]">
-                    {distanceLoading ? "..." : `AED ${price.deliveryFee}`}
-                  </span>
-                </div>
+                {draft.hasLuggage && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-[#8B7280]">
+                      {distanceLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {draft.isInternational ? "International Shipping" : "Delivery Fee"} ({t("calculating")})
+                        </span>
+                      ) : (
+                        <>{draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}</>
+                      )}
+                    </span>
+                    <span className="font-semibold text-[#0A2E6D]">
+                      {distanceLoading ? "..." : `AED ${price.deliveryFee}`}
+                    </span>
+                  </div>
+                )}
 
                 {/* Regular bags */}
-                {draft.regularBags > 0 && (
+                {draft.hasLuggage && draft.regularBags > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
                       {t("regular")} Bags ({draft.regularBags} × AED {REGULAR_BAG_PRICE})
@@ -1694,13 +1890,25 @@ export function BookingWizard({
                 )}
 
                 {/* Odd-sized items */}
-                {draft.oddSizedItems > 0 && (
+                {draft.hasLuggage && draft.oddSizedItems > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
                       {t("oddSized")} Items ({draft.oddSizedItems} × AED {ODD_ITEM_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
                       AED {draft.oddSizedItems * ODD_ITEM_PRICE}
+                    </span>
+                  </div>
+                )}
+
+                {/* Chauffeur Service */}
+                {draft.hasChauffeur && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-[#8B7280]">
+                      Chauffeur Service
+                    </span>
+                    <span className="font-semibold text-[#0A2E6D]">
+                      AED {price.chauffeurCharge}
                     </span>
                   </div>
                 )}
@@ -1716,14 +1924,29 @@ export function BookingWizard({
                     </span>
                   </div>
                 )}
+
               </div>
-              <div className="border-t border-[#E5E5E5] pt-4 flex justify-between items-center">
-                <span className="font-bold text-[#0A2E6D]">
-                  {t("totalPrice")}
-                </span>
-                <span className="text-2xl font-bold text-[#0A2E6D]">
-                  AED {price.total}
-                </span>
+              <div className="border-t border-[#E5E5E5] pt-4 space-y-2">
+                {price.bagDiscount! > 0 && (
+                  <>
+                    <div className="flex justify-between items-center text-sm font-semibold text-[#8B7280]">
+                      <span>Subtotal</span>
+                      <span>AED {price.total + price.bagDiscount}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-semibold text-emerald-600">
+                      <span>Multi-bag Discount (4 &amp; 4+ Bags)</span>
+                      <span>- AED {price.bagDiscount}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-[#E5E5E5]/60">
+                  <span className="font-bold text-[#0A2E6D]">
+                    {t("totalPrice")}
+                  </span>
+                  <span className="text-2xl font-bold text-[#0A2E6D]">
+                    AED {price.total}
+                  </span>
+                </div>
               </div>
             </div>
             ); })()}
@@ -1765,15 +1988,27 @@ export function BookingWizard({
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-6"
           >
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0A2E6D] leading-tight mb-1">
-                {t("reviewOrder")}
-              </h2>
-              <p className="text-[#8B7280] text-base">{t("reviewSubtitle")}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0A2E6D] leading-tight mb-1">
+                  {t("reviewOrder")}
+                </h2>
+                <p className="text-[#8B7280] text-base">{t("reviewSubtitle")}</p>
+              </div>
+              <button
+                onClick={() => setStep(2)}
+                className="h-10 px-4 rounded-xl font-semibold text-[#8B7280] hover:text-[#0A2E6D] bg-[#F6F2EA] border border-[#E5E5E5] transition-all flex items-center gap-2 text-xs"
+              >
+                {isRtl ? <ArrowRight className="w-3.5 h-3.5" /> : <ArrowLeft className="w-3.5 h-3.5" />} {t("backButton")}
+              </button>
             </div>
 
             <div className="bg-[#F6F2EA]/40 border border-[#E5E5E5] rounded-xl overflow-hidden">
               {[
+                {
+                  label: "Service",
+                  value: `${draft.hasLuggage ? "Luggage Transfer" : ""}${draft.hasLuggage && draft.hasChauffeur ? " + " : ""}${draft.hasChauffeur ? "Chauffeur Service" : ""}`,
+                },
                 {
                   label: t("summary.pickup"),
                   value: `${draft.pickupLocation} @ ${draft.pickupTime}`,
@@ -1795,6 +2030,13 @@ export function BookingWizard({
                   label: t("summary.travellers"),
                   value: `${draft.adults} ${draft.adults !== 1 ? t("summary.adults") : t("summary.adult")}${draft.children > 0 ? `, ${draft.children} ${draft.children !== 1 ? t("summary.children") : t("summary.child")} (${t("summary.ages")}: ${draft.childrenAges.join(", ")})` : ""}`,
                 },
+                {
+                  label: t("paymentMethod"),
+                  value:
+                    draft.paymentMethod === "cod"
+                      ? t("cashOnDelivery")
+                      : t("cardPayment"),
+                },
               ].map(({ label, value }, i, arr) => (
                 <div
                   key={label}
@@ -1811,16 +2053,88 @@ export function BookingWizard({
               {/* Extras removed */}
             </div>
 
-            {/* Payment Method Selection */}
+            {/* Promo Code Section */}
+            <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-[#0A2E6D] tracking-tight">
+                  {pt("title")}
+                </h3>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder={pt("placeholder")}
+                  value={draft.promoCode}
+                  onChange={(e) => {
+                    setDraft({ ...draft, promoCode: e.target.value.toUpperCase() });
+                    setPromoError(null);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[#F6F2EA] border border-transparent focus:border-[#1E5BD7] focus:bg-white text-[#0A2E6D] font-bold tracking-wider placeholder-[#8B7280]/40 outline-none transition-all"
+                />
+                <button
+                  disabled={promoLoading || !draft.promoCode}
+                  onClick={async () => {
+                    setPromoLoading(true);
+                    setPromoError(null);
+                    try {
+                      const price = calculateBookingPrice(draft);
+                      const res = await fetch("/api/promo/validate", {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                          code: draft.promoCode,
+                          bookingAmount: price.total + (draft.promoDiscount || 0)
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        let discount = 0;
+                        if (data.discount_type === "amount") {
+                          discount = data.discount_value;
+                        } else {
+                          discount = Math.round((price.total + (draft.promoDiscount || 0)) * (data.discount_value / 100));
+                        }
+                        setDraft({ ...draft, promoDiscount: discount });
+                      } else {
+                        const errorMsg = data.error || pt("invalid");
+                        setPromoError(errorMsg);
+                        setDraft({ ...draft, promoDiscount: 0 });
+                      }
+                    } catch {
+                      setPromoError("Failed to validate promo code");
+                    } finally {
+                      setPromoLoading(false);
+                    }
+                  }}
+                  className="px-6 py-3 rounded-xl bg-[#0A2E6D] text-white font-bold text-sm hover:bg-[#0D3A8A] transition-all active:scale-95 disabled:opacity-50 min-w-[120px]"
+                >
+                  {promoLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : pt("apply")}
+                </button>
+              </div>
+              {promoError && (
+                <p className="text-red-500 text-xs font-bold">{promoError}</p>
+              )}
+              {draft.promoDiscount! > 0 && !promoError && (
+                <p className="text-emerald-600 text-xs font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Promo applied! AED {draft.promoDiscount} saved.
+                </p>
+              )}
+            </div>
+
+            {/* Payment method — booking is created here with selected method */}
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
               <h3 className="text-lg font-bold text-[#0A2E6D] tracking-tight">
                 {t("paymentMethod")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setDraft({ ...draft, paymentMethod: "stripe" })}
+                  type="button"
+                  onClick={() => {
+                    setBookingId(null);
+                    setClientSecret(null);
+                    setDraft({ ...draft, paymentMethod: "card" });
+                  }}
                   className={`p-4 rounded-xl border-2 transition-all ${
-                    draft.paymentMethod === "stripe"
+                    draft.paymentMethod !== "cod"
                       ? "border-[#1E5BD7] bg-[#1E5BD7]/5"
                       : "border-[#E5E5E5] hover:border-[#1E5BD7]/50"
                   }`}
@@ -1832,7 +2146,12 @@ export function BookingWizard({
                   </div>
                 </button>
                 <button
-                  onClick={() => setDraft({ ...draft, paymentMethod: "cod" })}
+                  type="button"
+                  onClick={() => {
+                    setBookingId(null);
+                    setClientSecret(null);
+                    setDraft({ ...draft, paymentMethod: "cod" });
+                  }}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     draft.paymentMethod === "cod"
                       ? "border-[#1E5BD7] bg-[#1E5BD7]/5"
@@ -1864,17 +2183,19 @@ export function BookingWizard({
 
               <div className="space-y-2">
                 {/* Delivery fee */}
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#8B7280]">
-                    {draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}
-                  </span>
-                  <span className="font-semibold text-[#0A2E6D]">
-                    AED {price.deliveryFee}
-                  </span>
-                </div>
+                {draft.hasLuggage && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-[#8B7280]">
+                      {draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}
+                    </span>
+                    <span className="font-semibold text-[#0A2E6D]">
+                      AED {price.deliveryFee}
+                    </span>
+                  </div>
+                )}
 
                 {/* Regular bags */}
-                {draft.regularBags > 0 && (
+                {draft.hasLuggage && draft.regularBags > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
                       {t("regular")} Bags ({draft.regularBags} × AED {REGULAR_BAG_PRICE})
@@ -1886,13 +2207,25 @@ export function BookingWizard({
                 )}
 
                 {/* Odd-sized items */}
-                {draft.oddSizedItems > 0 && (
+                {draft.hasLuggage && draft.oddSizedItems > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
                       {t("oddSized")} Items ({draft.oddSizedItems} × AED {ODD_ITEM_PRICE})
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
                       AED {draft.oddSizedItems * ODD_ITEM_PRICE}
+                    </span>
+                  </div>
+                )}
+
+                {/* Chauffeur Service */}
+                {draft.hasChauffeur && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-[#8B7280]">
+                      Chauffeur Service
+                    </span>
+                    <span className="font-semibold text-[#0A2E6D]">
+                      AED {price.chauffeurCharge}
                     </span>
                   </div>
                 )}
@@ -1908,15 +2241,37 @@ export function BookingWizard({
                     </span>
                   </div>
                 )}
-              </div>
 
-              <div className="border-t border-[#E5E5E5] pt-4 flex justify-between items-center">
-                <span className="font-bold text-[#0A2E6D]">
-                  {t("totalPrice")}
-                </span>
-                <span className="text-2xl font-bold text-[#0A2E6D]">
-                  AED {price.total}
-                </span>
+              </div>
+              <div className="border-t border-[#E5E5E5] pt-4 space-y-2">
+                {(price.bagDiscount! > 0 || (draft.promoDiscount || 0) > 0) && (
+                  <>
+                    <div className="flex justify-between items-center text-sm font-semibold text-[#8B7280]">
+                      <span>Subtotal</span>
+                      <span>AED {price.total + price.bagDiscount + (draft.promoDiscount || 0)}</span>
+                    </div>
+                    {price.bagDiscount! > 0 && (
+                      <div className="flex justify-between items-center text-sm font-semibold text-emerald-600">
+                        <span>Multi-bag Discount (4 &amp; 4+ Bags)</span>
+                        <span>- AED {price.bagDiscount}</span>
+                      </div>
+                    )}
+                    {(draft.promoDiscount || 0) > 0 && (
+                      <div className="flex justify-between items-center text-sm font-semibold text-emerald-600">
+                        <span>Promo Discount</span>
+                        <span>- AED {draft.promoDiscount}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-[#E5E5E5]/60">
+                  <span className="font-bold text-[#0A2E6D]">
+                    {t("totalPrice")}
+                  </span>
+                  <span className="text-2xl font-bold text-[#0A2E6D]">
+                    AED {price.total}
+                  </span>
+                </div>
               </div>
             </div>
             ); })()}
@@ -1928,33 +2283,63 @@ export function BookingWizard({
                   {t("confirmingOrder")}
                 </p>
               </div>
-            ) : draft.paymentMethod === "cod" ? (
-              <div className="bg-white border border-[#E5E5E5] p-5 rounded-xl shadow-sm">
-                <div className="text-center space-y-4">
-                  <div className="flex justify-center">
-                    <Banknote className="w-12 h-12 text-[#0A2E6D]" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-[#0A2E6D] mb-2">{t("cashOnDelivery")}</h4>
-                    <p className="text-sm text-[#8B7280]">
-                      {t("codPayMessage", { amount: calculateBookingPrice(draft).total })}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handlePaymentSuccess}
-                    disabled={isSubmitting}
-                    className="w-full h-12 rounded-xl flex items-center justify-center gap-3 text-base font-semibold tracking-tight transition-all bg-[#0A2E6D] text-white hover:bg-[#0D3A8A] active:scale-[0.98] duration-200 disabled:opacity-40"
-                  >
-                    {isSubmitting ? (
-                      <span className="animate-pulse">{t("confirming")}</span>
-                    ) : (
-                      <>
-                        <span>{t("confirmOrder")}</span>
-                        <CheckCircle2 className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
-                </div>
+            ) : !bookingId ? (
+              <div className="bg-white border border-[#E5E5E5] p-5 rounded-xl shadow-sm space-y-4">
+                {draft.paymentMethod === "cod" ? (
+                  <p className="text-sm text-[#8B7280] text-center">
+                    {t("codPayMessage", { amount: calculateBookingPrice(draft).total })}
+                  </p>
+                ) : (
+                  <p className="text-sm text-[#8B7280] text-center">
+                    {t("cardPaymentDesc")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => submitBooking()}
+                  disabled={isSubmitting}
+                  className="w-full h-12 rounded-xl flex items-center justify-center gap-3 text-base font-semibold tracking-tight transition-all bg-[#0A2E6D] text-white hover:bg-[#0D3A8A] active:scale-[0.98] duration-200 disabled:opacity-40"
+                >
+                  {isSubmitting ? (
+                    <span className="animate-pulse">{t("confirming")}</span>
+                  ) : draft.paymentMethod === "cod" ? (
+                    <>
+                      <span>{t("confirmOrder")}</span>
+                      <CheckCircle2 className="w-5 h-5" />
+                    </>
+                  ) : (
+                    <>
+                      <span>{t("continue")}</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : draft.paymentMethod === "cod" && bookingId ? (
+              <div className="bg-white border border-[#E5E5E5] p-5 rounded-xl shadow-sm space-y-4">
+                {error && (
+                  <p className="text-sm text-red-600 text-center font-medium">{error}</p>
+                )}
+                {!error && (
+                  <p className="text-sm text-[#8B7280] text-center">
+                    {t("codPayMessage", { amount: calculateBookingPrice(draft).total })}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handlePaymentSuccess(bookingId)}
+                  disabled={isConfirmingOrder}
+                  className="w-full h-12 rounded-xl flex items-center justify-center gap-3 text-base font-semibold tracking-tight transition-all bg-[#0A2E6D] text-white hover:bg-[#0D3A8A] active:scale-[0.98] duration-200 disabled:opacity-40"
+                >
+                  {isConfirmingOrder ? (
+                    <span className="animate-pulse">{t("confirming")}</span>
+                  ) : (
+                    <>
+                      <span>{t("confirmOrder")}</span>
+                      <CheckCircle2 className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
               </div>
             ) : clientSecret ? (
               <div className="bg-white border border-[#E5E5E5] p-5 rounded-xl shadow-sm">
@@ -1963,7 +2348,7 @@ export function BookingWizard({
                   options={{ clientSecret, appearance: { theme: "stripe" } }}
                 >
                   <StripePaymentForm
-                    onSuccess={handlePaymentSuccess}
+                    onSuccess={() => void handlePaymentSuccess()}
                     isSubmitting={isSubmitting}
                     setIsSubmitting={setIsSubmitting}
                   />
@@ -1973,8 +2358,10 @@ export function BookingWizard({
                     Development Testing
                   </p>
                   <button
-                    onClick={handlePaymentSuccess}
-                    className="w-full h-10 rounded-lg bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors text-sm font-semibold flex items-center justify-center"
+                    type="button"
+                    onClick={() => void handlePaymentSuccess(bookingId ?? undefined)}
+                    disabled={isConfirmingOrder || !bookingId}
+                    className="w-full h-10 rounded-lg bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors text-sm font-semibold flex items-center justify-center disabled:opacity-50"
                   >
                     Bypass Payment & Trigger Flow
                   </button>
@@ -1986,17 +2373,22 @@ export function BookingWizard({
               </div>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setError(null);
-                  setStep(2);
-                }}
-                disabled={isSubmitting}
-                className="w-full h-12 rounded-xl font-semibold text-[#8B7280] hover:text-[#0A2E6D] bg-[#F6F2EA] border border-[#E5E5E5] transition-all flex items-center justify-center gap-2 disabled:opacity-30"
-              >
-                {isRtl ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />} {t("backToGuest")}
-              </button>
+            {/* Legal Links Section */}
+            <div className="pt-4 text-center space-y-4">
+              <p className="text-[11px] text-[#8B7280] leading-relaxed max-w-md mx-auto">
+                {lt.rich("bookingAcceptance", {
+                  terms: (chunks) => <Link href="/terms" className="hover:underline text-[#0A2E6D] font-bold">{chunks}</Link>,
+                  privacy: (chunks) => <Link href="/privacy-policy" className="hover:underline text-[#0A2E6D] font-bold">{chunks}</Link>,
+                  prohibited: (chunks) => <Link href="/prohibited-items" className="hover:underline text-[#0A2E6D] font-bold">{chunks}</Link>
+                })}
+              </p>
+              <div className="flex justify-center gap-4 text-[10px] font-bold text-[#1E5BD7] uppercase tracking-widest">
+                <Link href="/terms" className="hover:underline">{lt("termsOfService")}</Link>
+                <span className="text-[#E5E5E5]">|</span>
+                <Link href="/privacy-policy" className="hover:underline">{lt("privacyPolicy")}</Link>
+                <span className="text-[#E5E5E5]">|</span>
+                <Link href="/prohibited-items" className="hover:underline">{lt("prohibitedItems")}</Link>
+              </div>
             </div>
           </motion.div>
         )}
