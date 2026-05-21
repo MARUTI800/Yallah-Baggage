@@ -8,7 +8,6 @@ import Footer4Col from "@/components/ui/footer-column";
 import { FaqAccordion } from "@/components/ui/faq-chat-accordion";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useRouter } from "@/navigation";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
   Menu,
@@ -30,25 +29,11 @@ export const RevolutionHero = () => {
   const router = useRouter();
   const isRtl = locale === "ar";
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [scrolled, setScrolled] = React.useState(false);
-
-  React.useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <div className="w-full flex flex-col font-sans overflow-x-hidden">
-      {/* ─── Navbar: Clean Uber-style flat ─── */}
-      <header 
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-          scrolled 
-            ? "bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-b border-[#E5E5E5]/40 h-[80px] lg:h-[90px]" 
-            : "bg-white h-[80px] lg:h-[100px]"
-        )}
-      >
+      {/* ─── Navbar: scrolls away with the page (not sticky/fixed) ─── */}
+      <header className="relative z-50 bg-white border-b border-[#E5E5E5] h-[80px] lg:h-[100px]">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-full flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center h-full group">
@@ -84,7 +69,7 @@ export const RevolutionHero = () => {
                   const targetId = item.id;
                   const element = document.getElementById(targetId!);
                   if (element) {
-                    const offset = 80;
+                    const offset = 16;
                     const bodyRect = document.body.getBoundingClientRect().top;
                     const elementRect = element.getBoundingClientRect().top;
                     const elementPosition = elementRect - bodyRect;
@@ -174,7 +159,7 @@ export const RevolutionHero = () => {
                       const targetId = item.id;
                       const element = document.getElementById(targetId!);
                       if (element) {
-                        const offset = 80;
+                        const offset = 16;
                         const bodyRect =
                           document.body.getBoundingClientRect().top;
                         const elementRect = element.getBoundingClientRect().top;
@@ -229,7 +214,7 @@ export const RevolutionHero = () => {
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#0A2E6D]/5 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 pt-[120px] lg:pt-[140px] pb-12 lg:pb-20 relative z-10">
+        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 pt-10 lg:pt-14 pb-12 lg:pb-20 relative z-10">
           {/* Left: Text Content */}
           <div className="w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left z-10">
             <motion.div
@@ -276,7 +261,7 @@ export const RevolutionHero = () => {
                     const el = document.getElementById("how-it-works");
                     if (el) {
                       window.scrollTo({
-                        top: el.offsetTop - 80,
+                        top: el.offsetTop - 16,
                         behavior: "smooth",
                       });
                     }

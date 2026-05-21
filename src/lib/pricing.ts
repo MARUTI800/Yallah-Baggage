@@ -65,6 +65,9 @@ export function calculateBookingPrice(params: PricingParams): PricingResult {
     deliveryFee = 0;
   } else if (isInternational) {
     deliveryFee = INTERNATIONAL_FLAT_RATE;
+  } else if (!distanceReady) {
+    // Wait for live distance — avoid showing misleading base-only fee (e.g. AED 40)
+    deliveryFee = 0;
   } else {
     deliveryFee = LOCAL_BASE_FEE + resolvedDistance * LOCAL_PER_KM;
   }

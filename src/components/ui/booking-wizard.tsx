@@ -259,7 +259,7 @@ function LocationInput({
             placeholder={placeholder}
             className="w-full text-base font-medium text-[#0A2E6D] bg-transparent focus:outline-none placeholder-[#8B7280]/40 tracking-tight"
             onFocus={() => setFocused(true)}
-            onBlur={() => setTimeout(() => setFocused(false), 200)}
+            onBlur={() => setTimeout(() => setFocused(false), 350)}
             onChange={(e) => {
               setQuery(e.target.value);
               onChange(e.target.value);
@@ -313,7 +313,10 @@ function LocationInput({
                 return (
                   <div
                     key={loc.place_id}
-                    onMouseDown={() => select(loc)}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      select(loc);
+                    }}
                     className="flex items-center gap-4 px-4 py-3 hover:bg-[#F6F2EA] cursor-pointer group/item transition-colors"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#F6F2EA] flex items-center justify-center flex-shrink-0 transition-all">
@@ -334,7 +337,10 @@ function LocationInput({
               })
             ) : !loading ? (
               <div
-                onMouseDown={() => geocodeCustomAddress(query)}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  geocodeCustomAddress(query);
+                }}
                 className="flex items-center gap-4 px-4 py-3 hover:bg-[#F6F2EA] cursor-pointer group/item transition-colors"
               >
                 <div className="w-8 h-8 rounded-lg bg-[#F6F2EA] flex items-center justify-center flex-shrink-0 transition-all">
@@ -838,6 +844,7 @@ export function BookingWizard({
   const [isConfirmingOrder, setIsConfirmingOrder] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [distanceLoading, setDistanceLoading] = useState(false);
+  const [distanceError, setDistanceError] = useState<string | null>(null);
   const [deliveryManuallyEdited, setDeliveryManuallyEdited] = useState(false);
 
   useEffect(() => {
@@ -851,11 +858,13 @@ export function BookingWizard({
 
     if (pickup.length < 5 || dropoff.length < 5) {
       onRouteUpdate?.(null, null, null);
+      setDistanceError(null);
       return;
     }
     setDeliveryManuallyEdited(false);
 
     setDistanceLoading(true);
+    setDistanceError(null);
     setDraft((d) => ({
       ...d,
       distanceKm: undefined,
@@ -877,24 +886,45 @@ export function BookingWizard({
         const data = await res.json();
         if (cancelled) return;
 
+        if (!res.ok) {
+          setDistanceError(
+            data.error || "Could not calculate delivery distance. Please check both addresses.",
+          );
+          return;
+        }
+
+        const km =
+          typeof data.distanceKm === "number" && data.distanceKm > 0
+            ? data.distanceKm
+            : null;
+        if (!km) {
+          setDistanceError("Could not calculate route distance. Try re-selecting both locations.");
+          return;
+        }
+
+        setDraft((d) => ({
+          ...d,
+          distanceKm: km,
+          durationMins:
+            data.durationMins || Math.max(30, Math.round(km * 1.5)),
+          isInternational: !!data.isInternational,
+          originCoords: data.originCoords,
+          destCoords: data.destCoords,
+        }));
+
         if (data.originCoords && data.destCoords) {
-          setDraft((d) => ({
-            ...d,
-            distanceKm: data.distanceKm > 0 ? data.distanceKm : d.distanceKm,
-            durationMins:
-              data.durationMins ||
-              (data.distanceKm > 0 ? Math.round(data.distanceKm * 1.5) : undefined),
-            isInternational: data.isInternational || false,
-            originCoords: data.originCoords,
-            destCoords: data.destCoords,
-          }));
           onRouteUpdate?.(pickup, dropoff, {
             origin: data.originCoords,
             dest: data.destCoords,
           });
+        } else {
+          onRouteUpdate?.(pickup, dropoff, null);
         }
       } catch (err) {
-        if (!cancelled) console.error("Failed to fetch distance:", err);
+        if (!cancelled) {
+          console.error("Failed to fetch distance:", err);
+          setDistanceError("Network error while calculating distance. Please try again.");
+        }
       } finally {
         if (!cancelled) setDistanceLoading(false);
       }
@@ -1034,6 +1064,15 @@ export function BookingWizard({
       return t("errors.emailRequired");
     if (!draft.phone.trim()) return t("errors.phoneRequired");
     if (draft.numberOfBags < 1) return t("errors.bagsRequired");
+    if (draft.hasLuggage && !draft.isInternational) {
+      if (distanceLoading) {
+        return "Delivery distance is still calculating. Please wait a moment.";
+      }
+      if (distanceError) return distanceError;
+      if (!draft.distanceKm || draft.distanceKm <= 0) {
+        return "Please select both locations from the address list so we can calculate the delivery fee.";
+      }
+    }
     if (draft.children > 0) {
       if (
         draft.childrenAges.length !== draft.children ||
@@ -1046,6 +1085,22 @@ export function BookingWizard({
   };
 
   const submitBooking = async () => {
+    if (draft.hasLuggage && !draft.isInternational) {
+      if (distanceLoading) {
+        setError("Delivery distance is still calculating. Please wait a moment.");
+        return;
+      }
+      if (distanceError) {
+        setError(distanceError);
+        return;
+      }
+      if (!draft.distanceKm || draft.distanceKm <= 0) {
+        setError(
+          "Please select both locations from the address list so we can calculate the delivery fee.",
+        );
+        return;
+      }
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -1843,6 +1898,10 @@ export function BookingWizard({
               </div>
             </div>
 
+            {distanceError && (
+              <p className="text-sm text-red-600 font-medium px-1">{distanceError}</p>
+            )}
+
             {/* Price Quotation */}
             {(() => { const price = calculateBookingPrice(draft); return (
             <div className="bg-[#F6F2EA]/40 border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
@@ -1872,7 +1931,9 @@ export function BookingWizard({
                       )}
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      {distanceLoading ? "..." : `AED ${price.deliveryFee}`}
+                      {distanceLoading || (!price.distanceReady && !draft.isInternational)
+                        ? "..."
+                        : `AED ${price.deliveryFee}`}
                     </span>
                   </div>
                 )}
@@ -1944,7 +2005,10 @@ export function BookingWizard({
                     {t("totalPrice")}
                   </span>
                   <span className="text-2xl font-bold text-[#0A2E6D]">
-                    AED {price.total}
+                    {distanceLoading ||
+                    (draft.hasLuggage && !price.distanceReady && !draft.isInternational)
+                      ? "..."
+                      : `AED ${price.total}`}
                   </span>
                 </div>
               </div>
@@ -2167,6 +2231,10 @@ export function BookingWizard({
               </div>
             </div>
 
+            {distanceError && (
+              <p className="text-sm text-red-600 font-medium px-1">{distanceError}</p>
+            )}
+
             {/* Price Quotation */}
             {(() => { const price = calculateBookingPrice(draft); return (
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
@@ -2186,10 +2254,21 @@ export function BookingWizard({
                 {draft.hasLuggage && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {draft.isInternational ? "International Shipping" : `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`}
+                      {distanceLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {t("calculating")}
+                        </span>
+                      ) : draft.isInternational ? (
+                        "International Shipping"
+                      ) : (
+                        `Delivery Fee (${price.distanceReady ? `${Math.round(price.distanceKm)} km` : "-- km"})`
+                      )}
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      AED {price.deliveryFee}
+                      {distanceLoading || (!price.distanceReady && !draft.isInternational)
+                        ? "..."
+                        : `AED ${price.deliveryFee}`}
                     </span>
                   </div>
                 )}
@@ -2269,7 +2348,10 @@ export function BookingWizard({
                     {t("totalPrice")}
                   </span>
                   <span className="text-2xl font-bold text-[#0A2E6D]">
-                    AED {price.total}
+                    {distanceLoading ||
+                    (draft.hasLuggage && !price.distanceReady && !draft.isInternational)
+                      ? "..."
+                      : `AED ${price.total}`}
                   </span>
                 </div>
               </div>
