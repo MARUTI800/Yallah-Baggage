@@ -33,9 +33,9 @@ export const OtpEmail: React.FC<Readonly<OtpEmailProps>> = ({ otpCode }) => (
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://gviboyquykrdbtwxebfi.supabase.co/storage/v1/object/public/brand/Logo_primary.png"
+          src="https://yallah-baggage.vercel.app/logo-footer-white.png"
           alt="Yallah Baggage"
-          style={{ height: "40px", filter: "brightness(0) invert(1)" }}
+          style={{ height: "44px", display: "inline-block" }}
         />
       </div>
 

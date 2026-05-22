@@ -43,7 +43,7 @@ serve(async (req) => {
       <div style="font-family: 'Poppins', -apple-system, sans-serif; background-color: #F6F2EA; padding: 40px 20px; color: #0A2E6D;">
         <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 10px 30px rgba(10, 46, 109, 0.05);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://gviboyquykrdbtwxebfi.supabase.co/storage/v1/object/public/brand/Logo_primary.png" alt="Yallah Baggage" style="height: 60px;" />
+            <img src="https://yallah-baggage.vercel.app/logo-footer-white.png" alt="Yallah Baggage" style="height: 48px;" />
           </div>
           <div style="text-align: center; margin-bottom: 24px;">
             <div style="display: inline-block; width: 64px; height: 64px; border-radius: 50%; background-color: #ecfdf5; line-height: 64px; font-size: 32px; text-align: center;">✓</div>

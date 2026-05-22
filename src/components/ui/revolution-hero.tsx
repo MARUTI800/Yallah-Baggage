@@ -3,6 +3,7 @@
 import React from "react";
 import { RideBookingForm } from "@/components/ui/ride-booking-form";
 import { Logos3 } from "@/components/ui/logos3";
+import { SiteLogo } from "@/components/ui/site-logo";
 import { HotelLogoCarousel } from "@/components/ui/hotel-logo-carousel";
 import Footer4Col from "@/components/ui/footer-column";
 import { FaqAccordion } from "@/components/ui/faq-chat-accordion";
@@ -33,19 +34,10 @@ export const RevolutionHero = () => {
   return (
     <div className="w-full flex flex-col font-sans overflow-x-hidden">
       {/* ─── Navbar: scrolls away with the page (not sticky/fixed) ─── */}
-      <header className="relative z-50 bg-white border-b border-[#E5E5E5] h-[80px] lg:h-[100px]">
+      <header className="relative z-50 bg-white border-b border-[#E5E5E5] h-[88px] sm:h-[92px] lg:h-[108px]">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-full flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center h-full group">
-            <Image
-              src="/Logo_primary.png"
-              alt="Yallah Baggage"
-              width={180}
-              height={70}
-              priority
-              className="h-[70px] lg:h-[100px] w-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-            />
-          </Link>
+          <SiteLogo variant="header" priority className="transition-transform duration-500 hover:scale-[1.02]" />
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1">

@@ -1,8 +1,8 @@
 "use client";
 
-import { Link } from "@/navigation";
 import Image from "next/image";
-import { useState, useMemo, Suspense } from "react";
+import { SiteLogo } from "@/components/ui/site-logo";
+import { useState, useMemo, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { BookingWizard } from "@/components/ui/booking-wizard";
 import { MapPin, Shield, Clock, Star } from "lucide-react";
@@ -101,18 +101,21 @@ export default function BookNowPage() {
     return `https://maps.google.com/maps?q=25.2048,55.2708&t=&z=11&ie=UTF8&iwloc=&output=embed`;
   }, [hasRouteCoords, routeCoords, pinned, apiKey]);
 
-  const handleRouteUpdate = (
-    origin: string | null,
-    dest: string | null,
-    coords?: {
-      origin?: { lat: number; lng: number };
-      dest?: { lat: number; lng: number };
-    } | null,
-  ) => {
-    setRouteOrigin(origin);
-    setRouteDest(dest);
-    setRouteCoords(coords ?? null);
-  };
+  const handleRouteUpdate = useCallback(
+    (
+      origin: string | null,
+      dest: string | null,
+      coords?: {
+        origin?: { lat: number; lng: number };
+        dest?: { lat: number; lng: number };
+      } | null,
+    ) => {
+      setRouteOrigin(origin);
+      setRouteDest(dest);
+      setRouteCoords(coords ?? null);
+    },
+    [],
+  );
 
   const showRouteOnMap = hasValidRouteLabels && hasRouteCoords;
 
@@ -123,19 +126,10 @@ export default function BookNowPage() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="absolute top-0 left-0 right-0 z-[100] bg-white h-[80px] lg:h-[100px] flex items-center px-6 lg:px-10"
+        className="absolute top-0 left-0 right-0 z-[100] bg-white h-[88px] sm:h-[92px] lg:h-[108px] flex items-center px-6 lg:px-10"
       >
         <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/Logo_primary.png"
-              alt="Yallah Baggage"
-              width={180}
-              height={70}
-              priority
-              className="h-[70px] lg:h-[100px] w-auto"
-            />
-          </Link>
+          <SiteLogo variant="header" priority />
           <div className="flex items-center gap-2 text-[#8B7280] text-xs font-semibold tracking-wide uppercase">
             <span className="w-2 h-2 rounded-full bg-[#1E5BD7] animate-pulse" />
             {t("secureCheckout")}
@@ -144,7 +138,7 @@ export default function BookNowPage() {
       </motion.header>
 
       {/* Two-Panel Layout */}
-      <div className="flex flex-col lg:flex-row flex-1 pt-[80px] lg:pt-[100px] min-h-screen">
+      <div className="flex flex-col lg:flex-row flex-1 pt-[88px] sm:pt-[92px] lg:pt-[108px] min-h-screen">
         {/* LEFT: Map Panel */}
         <div className="hidden lg:flex lg:w-[42%] xl:w-[38%] relative flex-col justify-end overflow-hidden flex-shrink-0 bg-[#0A2E6D]">
           <iframe

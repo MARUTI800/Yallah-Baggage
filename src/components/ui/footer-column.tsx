@@ -3,7 +3,7 @@
 import { Facebook, Instagram, Linkedin, Youtube, Music2 } from "lucide-react";
 import { Link } from "@/navigation";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
+import { SiteLogo } from "@/components/ui/site-logo";
 
 const data = {
   facebookLink: "https://www.facebook.com/profile.php?id=61559429296077",
@@ -68,15 +68,9 @@ export default function Footer4Col() {
         {/* Brand Header */}
         <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-8 mb-20">
           <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-xl">
-            <Link href="/" className="mb-8 block">
-              <Image 
-                src="/Logo_primary.png" 
-                alt="Logo" 
-                width={150}
-                height={50}
-                className="h-12 w-auto brightness-0 invert opacity-90" 
-              />
-            </Link>
+            <div className="mb-8">
+              <SiteLogo variant="footer" />
+            </div>
             <p className="text-white/50 text-base lg:text-lg leading-relaxed font-medium tracking-tight">
               {t("description")}
             </p>

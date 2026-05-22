@@ -15,7 +15,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import Image from "next/image";
+import { SiteLogo } from "@/components/ui/site-logo";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
@@ -123,6 +123,11 @@ function isValidEmail(email: string) {
 
 // ── Pricing & Distance Utilities ──────────────────────────────────
 import { calculateBookingPrice, REGULAR_BAG_PRICE, ODD_ITEM_PRICE } from "@/lib/pricing";
+import {
+  estimateDrivingKm,
+  estimateDurationMins,
+  haversineKm,
+} from "@/lib/distance";
 
 // ── Location Autocomplete ──────────────────────────────────────────
 function LocationInput({
@@ -131,6 +136,7 @@ function LocationInput({
   value,
   onChange,
   onPin,
+  onCoords,
   placeholder,
 }: {
   label: string;
@@ -138,6 +144,7 @@ function LocationInput({
   value: string;
   onChange: (val: string) => void;
   onPin?: (lat: string, lon: string, name: string) => void;
+  onCoords?: (lat: number, lng: number) => void;
   placeholder: string;
 }) {
   const t = useTranslations("BookingWizard");
@@ -196,17 +203,22 @@ function LocationInput({
         const res = await fetch(`/api/places/details?place_id=${loc.place_id}`);
         const data = await res.json();
         if (data.lat && data.lon) {
+          const lat = Number(data.lat);
+          const lng = Number(data.lon);
           onPin?.(
             data.lat.toString(),
             data.lon.toString(),
             data.name || fullText,
           );
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            onCoords?.(lat, lng);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch place details:", err);
       }
     },
-    [onChange, onPin],
+    [onChange, onPin, onCoords],
   );
 
   const geocodeCustomAddress = async (searchQuery: string) => {
@@ -224,7 +236,12 @@ function LocationInput({
       setResults([]);
 
       if (data.lat && data.lon) {
+        const lat = Number(data.lat);
+        const lng = Number(data.lon);
         onPin?.(data.lat.toString(), data.lon.toString(), searchQuery);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          onCoords?.(lat, lng);
+        }
       }
     } catch (err) {
       console.error("Geocoding failed", err);
@@ -846,49 +863,101 @@ export function BookingWizard({
   const [distanceLoading, setDistanceLoading] = useState(false);
   const [distanceError, setDistanceError] = useState<string | null>(null);
   const [deliveryManuallyEdited, setDeliveryManuallyEdited] = useState(false);
+  const onRouteUpdateRef = useRef(onRouteUpdate);
+  const lastDistanceKeyRef = useRef<string | null>(null);
+  const distanceAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    onRouteUpdateRef.current = onRouteUpdate;
+  }, [onRouteUpdate]);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  // Fetch real distance from API when both locations are confirmed
+  // Instant estimate when both pins are known (before / while API refines)
+  useEffect(() => {
+    const pickup = draft.pickupLocation.trim();
+    const dropoff = draft.dropoffLocation.trim();
+    if (
+      pickup.length < 5 ||
+      dropoff.length < 5 ||
+      !draft.originCoords ||
+      !draft.destCoords
+    ) {
+      return;
+    }
+
+    const fetchKey = `${pickup}|${dropoff}`;
+    if (fetchKey === lastDistanceKeyRef.current) {
+      return;
+    }
+
+    const km = estimateDrivingKm(
+      haversineKm(draft.originCoords, draft.destCoords),
+    );
+    const durationMins = estimateDurationMins(km);
+
+    setDraft((d) => ({
+      ...d,
+      distanceKm: km,
+      durationMins,
+    }));
+    setDistanceLoading(false);
+    onRouteUpdateRef.current?.(pickup, dropoff, {
+      origin: draft.originCoords,
+      dest: draft.destCoords,
+    });
+  }, [
+    draft.pickupLocation,
+    draft.dropoffLocation,
+    draft.originCoords,
+    draft.destCoords,
+  ]);
+
+  // Fetch real distance from API when both locations are set (stable deps — no onRouteUpdate)
   useEffect(() => {
     const pickup = draft.pickupLocation.trim();
     const dropoff = draft.dropoffLocation.trim();
 
     if (pickup.length < 5 || dropoff.length < 5) {
-      onRouteUpdate?.(null, null, null);
+      lastDistanceKeyRef.current = null;
+      onRouteUpdateRef.current?.(null, null, null);
       setDistanceError(null);
+      setDistanceLoading(false);
       return;
     }
+
+    const fetchKey = `${pickup}|${dropoff}`;
+    if (fetchKey === lastDistanceKeyRef.current) {
+      return;
+    }
+
     setDeliveryManuallyEdited(false);
-
-    setDistanceLoading(true);
     setDistanceError(null);
-    setDraft((d) => ({
-      ...d,
-      distanceKm: undefined,
-      durationMins: undefined,
-      isInternational: undefined,
-      originCoords: undefined,
-      destCoords: undefined,
-    }));
-    // Labels only until geocoded coords arrive (avoids broken address-based embed zoom)
-    onRouteUpdate?.(pickup, dropoff, null);
+    const hasPinEstimate = draft.originCoords && draft.destCoords;
+    if (!hasPinEstimate) {
+      setDistanceLoading(true);
+      onRouteUpdateRef.current?.(pickup, dropoff, null);
+    }
 
-    let cancelled = false;
+    distanceAbortRef.current?.abort();
+    const ac = new AbortController();
+    distanceAbortRef.current = ac;
 
     const fetchDistance = async () => {
       try {
         const res = await fetch(
           `/api/places/distance?origin=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(dropoff)}`,
+          { signal: ac.signal },
         );
         const data = await res.json();
-        if (cancelled) return;
+        if (ac.signal.aborted) return;
 
         if (!res.ok) {
           setDistanceError(
-            data.error || "Could not calculate delivery distance. Please check both addresses.",
+            data.error ||
+              "Could not calculate delivery distance. Please check both addresses.",
           );
           return;
         }
@@ -898,9 +967,14 @@ export function BookingWizard({
             ? data.distanceKm
             : null;
         if (!km) {
-          setDistanceError("Could not calculate route distance. Try re-selecting both locations.");
+          setDistanceError(
+            "Could not calculate route distance. Try re-selecting both locations.",
+          );
           return;
         }
+
+        lastDistanceKeyRef.current = fetchKey;
+        setDistanceError(null);
 
         setDraft((d) => ({
           ...d,
@@ -908,35 +982,33 @@ export function BookingWizard({
           durationMins:
             data.durationMins || Math.max(30, Math.round(km * 1.5)),
           isInternational: !!data.isInternational,
-          originCoords: data.originCoords,
-          destCoords: data.destCoords,
+          originCoords: data.originCoords ?? d.originCoords,
+          destCoords: data.destCoords ?? d.destCoords,
         }));
 
         if (data.originCoords && data.destCoords) {
-          onRouteUpdate?.(pickup, dropoff, {
+          onRouteUpdateRef.current?.(pickup, dropoff, {
             origin: data.originCoords,
             dest: data.destCoords,
           });
-        } else {
-          onRouteUpdate?.(pickup, dropoff, null);
         }
       } catch (err) {
-        if (!cancelled) {
-          console.error("Failed to fetch distance:", err);
-          setDistanceError("Network error while calculating distance. Please try again.");
-        }
+        if (ac.signal.aborted) return;
+        console.error("Failed to fetch distance:", err);
+        setDistanceError(
+          "Network error while calculating distance. Please try again.",
+        );
       } finally {
-        if (!cancelled) setDistanceLoading(false);
+        if (!ac.signal.aborted) setDistanceLoading(false);
       }
     };
 
-    const tid = setTimeout(fetchDistance, 500);
+    const tid = setTimeout(fetchDistance, 450);
     return () => {
-      cancelled = true;
       clearTimeout(tid);
-      setDistanceLoading(false);
+      ac.abort();
     };
-  }, [draft.pickupLocation, draft.dropoffLocation, onRouteUpdate]);
+  }, [draft.pickupLocation, draft.dropoffLocation, draft.originCoords, draft.destCoords]);
 
   const pickupDateTime = useMemo(
     () => getComparableDate(draft.pickupDate, draft.pickupTime),
@@ -1373,9 +1445,20 @@ export function BookingWizard({
                 label={t("pickupLocation")}
                 icon={MapPin}
                 value={draft.pickupLocation}
-                onChange={(v) => setDraft((d) => ({ ...d, pickupLocation: v }))}
+                onChange={(v) => {
+                  lastDistanceKeyRef.current = null;
+                  setDraft((d) => ({
+                    ...d,
+                    pickupLocation: v,
+                    originCoords: undefined,
+                  }));
+                }}
                 onPin={(lat, lon, name) => {
                   onLocationPin?.(lat, lon, name);
+                }}
+                onCoords={(lat, lng) => {
+                  lastDistanceKeyRef.current = null;
+                  setDraft((d) => ({ ...d, originCoords: { lat, lng } }));
                 }}
                 placeholder={t("pickupLocationPlaceholder")}
               />
@@ -1383,11 +1466,20 @@ export function BookingWizard({
                 label={t("dropoffLocation")}
                 icon={Navigation2}
                 value={draft.dropoffLocation}
-                onChange={(v) =>
-                  setDraft((d) => ({ ...d, dropoffLocation: v }))
-                }
+                onChange={(v) => {
+                  lastDistanceKeyRef.current = null;
+                  setDraft((d) => ({
+                    ...d,
+                    dropoffLocation: v,
+                    destCoords: undefined,
+                  }));
+                }}
                 onPin={(lat, lon, name) => {
                   onLocationPin?.(lat, lon, name);
+                }}
+                onCoords={(lat, lng) => {
+                  lastDistanceKeyRef.current = null;
+                  setDraft((d) => ({ ...d, destCoords: { lat, lng } }));
                 }}
                 placeholder={t("dropoffLocationPlaceholder")}
               />
@@ -1921,7 +2013,7 @@ export function BookingWizard({
                 {draft.hasLuggage && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {distanceLoading ? (
+                      {distanceLoading && !price.distanceReady ? (
                         <span className="inline-flex items-center gap-2">
                           <Loader2 className="w-3 h-3 animate-spin" />
                           {draft.isInternational ? "International Shipping" : "Delivery Fee"} ({t("calculating")})
@@ -1931,7 +2023,7 @@ export function BookingWizard({
                       )}
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      {distanceLoading || (!price.distanceReady && !draft.isInternational)
+                      {!price.distanceReady && !draft.isInternational
                         ? "..."
                         : `AED ${price.deliveryFee}`}
                     </span>
@@ -2005,8 +2097,7 @@ export function BookingWizard({
                     {t("totalPrice")}
                   </span>
                   <span className="text-2xl font-bold text-[#0A2E6D]">
-                    {distanceLoading ||
-                    (draft.hasLuggage && !price.distanceReady && !draft.isInternational)
+                    {draft.hasLuggage && !price.distanceReady && !draft.isInternational
                       ? "..."
                       : `AED ${price.total}`}
                   </span>
@@ -2254,7 +2345,7 @@ export function BookingWizard({
                 {draft.hasLuggage && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[#8B7280]">
-                      {distanceLoading ? (
+                      {distanceLoading && !price.distanceReady ? (
                         <span className="inline-flex items-center gap-2">
                           <Loader2 className="w-3 h-3 animate-spin" />
                           {t("calculating")}
@@ -2266,7 +2357,7 @@ export function BookingWizard({
                       )}
                     </span>
                     <span className="font-semibold text-[#0A2E6D]">
-                      {distanceLoading || (!price.distanceReady && !draft.isInternational)
+                      {!price.distanceReady && !draft.isInternational
                         ? "..."
                         : `AED ${price.deliveryFee}`}
                     </span>
@@ -2348,8 +2439,7 @@ export function BookingWizard({
                     {t("totalPrice")}
                   </span>
                   <span className="text-2xl font-bold text-[#0A2E6D]">
-                    {distanceLoading ||
-                    (draft.hasLuggage && !price.distanceReady && !draft.isInternational)
+                    {draft.hasLuggage && !price.distanceReady && !draft.isInternational
                       ? "..."
                       : `AED ${price.total}`}
                   </span>
@@ -2599,14 +2689,8 @@ export function BookingWizard({
               </button>
 
               <div className="mb-6 mt-2 text-center">
-                <div className="w-32 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Image
-                    src="/Logo_primary.png"
-                    alt="Logo"
-                    width={150}
-                    height={50}
-                    className="w-auto h-16 object-contain"
-                  />
+                <div className="mx-auto mb-4 flex items-center justify-center">
+                  <SiteLogo variant="inline" href={undefined} />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#0A2E6D] mb-2">
                   {t("auth.verifyEmail")}

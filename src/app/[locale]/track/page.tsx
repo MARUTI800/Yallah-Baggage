@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { SiteLogo } from "@/components/ui/site-logo";
 import { Link } from "@/navigation";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
@@ -197,17 +197,8 @@ function TrackingPageContent() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-50 bg-white">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[80px] lg:h-[100px] flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/Logo_primary.png"
-              alt="Yallah Baggage"
-              width={180}
-              height={70}
-              priority
-              className="h-[70px] lg:h-[100px] w-auto"
-            />
-          </Link>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-[88px] sm:h-[92px] lg:h-[108px] flex items-center justify-between">
+          <SiteLogo variant="header" priority />
           <div className="flex items-center gap-3">
             <Link
               href="/book-now"
@@ -219,7 +210,7 @@ function TrackingPageContent() {
         </div>
       </header>
 
-      <main className="flex-1 pt-[80px] lg:pt-[100px]">
+      <main className="flex-1 pt-[88px] sm:pt-[92px] lg:pt-[108px]">
         <div className="max-w-lg mx-auto px-6 py-16">
           <AnimatePresence mode="wait">
             {/* ── STEP: Form ── */}
