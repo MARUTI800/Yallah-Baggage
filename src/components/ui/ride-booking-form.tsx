@@ -141,22 +141,22 @@ function DateTimePicker({
     >
       <div
         className={cn(
-          "w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent transition-all duration-200 cursor-pointer",
+          "w-full relative bg-[#F7F5F0] rounded-2xl px-4 py-3 border border-transparent transition-all duration-200 cursor-pointer",
           isOpen
             ? "bg-white border-[#1E5BD7] shadow-[0_0_0_4px_rgba(30,91,215,0.1)]"
             : "hover:bg-white",
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
             <Calendar className="w-5 h-5 text-[#0A2E6D]" />
           </div>
-          <div className="flex-1 flex flex-col justify-center min-h-[48px]">
-            <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block cursor-pointer uppercase tracking-wider">
+          <div className="flex-1 flex flex-col justify-center min-h-[44px] min-w-0">
+            <label className="text-[12px] font-bold text-[#0A2E6D] mb-0.5 block cursor-pointer uppercase tracking-wider truncate">
               {label}
             </label>
-            <div className="text-[15px] font-medium text-[#8B7280] leading-tight">
+            <div className="text-[14px] font-medium text-[#8B7280] leading-tight truncate">
               {formatAppleDate(selectedDate)} {t("at")} {selectedTime}
             </div>
           </div>
@@ -593,14 +593,14 @@ export const RideBookingForm = React.forwardRef<
       >
         {/* Left Side: Booking Form */}
         <div
-          className="p-8 sm:p-10 relative z-[40] flex flex-col h-full justify-center"
+          className="p-6 lg:p-8 xl:p-10 relative z-[40] flex flex-col h-full justify-center"
           ref={formRef}
         >
           <div className="mb-6">
             <h2 className="text-3xl lg:text-[2.5rem] font-bold text-[#0A2E6D] leading-[1.1] tracking-tight mb-2">
               {t("title")}
             </h2>
-            <p className="text-[#8B7280] font-medium text-lg">
+            <p className="text-[#8B7280] font-medium text-[15px] sm:text-lg">
               {t("subtitle")}
             </p>
           </div>
@@ -610,13 +610,13 @@ export const RideBookingForm = React.forwardRef<
             <div className="flex flex-col gap-4">
               {/* PICKUP */}
               <div className="relative flex flex-col w-full z-[40] group">
-                <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
-                  <div className="flex items-center gap-4">
+                <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-4 py-3 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 transition-all duration-300 group-focus-within:bg-[#1E5BD7] group-focus-within:text-white group-focus-within:shadow-[0_0_15px_rgba(30,91,215,0.4)]">
                       <MapPin className="w-5 h-5 text-[#0A2E6D] group-focus-within:text-white transition-all duration-300 group-focus-within:scale-110" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center min-h-[48px]">
-                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider">
+                    <div className="flex-1 flex flex-col justify-center min-h-[44px] min-w-0">
+                      <label className="text-[12px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider truncate">
                         {t("pickupLabel")}
                       </label>
                       <input
@@ -631,7 +631,7 @@ export const RideBookingForm = React.forwardRef<
                         onBlur={() =>
                           setTimeout(() => setPickupFocused(false), 200)
                         }
-                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight"
+                        className="w-full min-w-0 text-[14px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight truncate"
                         aria-label="Pickup location"
                       />
                     </div>
@@ -692,13 +692,13 @@ export const RideBookingForm = React.forwardRef<
 
               {/* DELIVERY */}
               <div className="relative flex flex-col w-full z-[30] group">
-                <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-5 py-3.5 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
-                  <div className="flex items-center gap-4">
+                <div className="w-full relative bg-[#F7F5F0] rounded-2xl px-4 py-3 border border-transparent focus-within:bg-white focus-within:border-[#1E5BD7] focus-within:shadow-[0_0_0_4px_rgba(30,91,215,0.1)] transition-all duration-200">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 transition-all duration-300 group-focus-within:bg-[#1E5BD7] group-focus-within:text-white group-focus-within:shadow-[0_0_15px_rgba(30,91,215,0.4)]">
                       <Navigation2 className="w-5 h-5 text-[#0A2E6D] group-focus-within:text-white transition-all duration-300 group-focus-within:scale-110" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center min-h-[48px]">
-                      <label className="text-[13px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider">
+                    <div className="flex-1 flex flex-col justify-center min-h-[44px] min-w-0">
+                      <label className="text-[12px] font-bold text-[#0A2E6D] mb-0.5 block uppercase tracking-wider truncate">
                         {t("deliveryLabel")}
                       </label>
                       <input
@@ -713,7 +713,7 @@ export const RideBookingForm = React.forwardRef<
                         onBlur={() =>
                           setTimeout(() => setDropoffFocused(false), 200)
                         }
-                        className="w-full text-[15px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight"
+                        className="w-full min-w-0 text-[14px] font-medium text-[#8B7280] focus:text-[#0A2E6D] focus:outline-none bg-transparent placeholder-[#8B7280]/60 leading-tight truncate"
                         aria-label="Delivery location"
                       />
                     </div>
